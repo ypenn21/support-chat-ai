@@ -1,4 +1,4 @@
-import { expect, afterEach } from 'vitest'
+import { afterEach, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 import '@testing-library/jest-dom'
 
@@ -8,7 +8,7 @@ afterEach(() => {
 })
 
 // Mock chrome API for tests
-global.chrome = {
+globalThis.chrome = {
   runtime: {
     sendMessage: vi.fn(),
     onMessage: {
