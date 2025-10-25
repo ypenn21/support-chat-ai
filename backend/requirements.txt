@@ -1,0 +1,20 @@
+# FastAPI and server
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+gunicorn==21.2.0
+python-multipart==0.0.6
+
+# Pydantic for data validation
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# Google Cloud SDK
+google-cloud-aiplatform==1.71.0
+google-cloud-secret-manager==2.18.0
+google-cloud-firestore==2.14.0
+google-cloud-logging==3.9.0
+vertexai==1.71.0
+
+# Utilities
+python-dotenv==1.0.0
+httpx==0.26.0

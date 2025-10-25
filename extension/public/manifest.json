@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "Support Chat AI Assistant",
+  "version": "0.1.0",
+  "description": "AI-powered response suggestions for support agents",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://*.zendesk.com/*",
+    "https://*.intercom.io/*"
+  ],
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.zendesk.com/*", "https://*.intercom.io/*"],
+      "js": ["src/content/index.ts"],
+      "css": ["src/content/styles.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "src/popup/index.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "options_page": "src/options/index.html",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

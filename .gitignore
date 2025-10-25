@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+.coverage
+.pytest_cache/
+.vitest/
+
+# Logs
+*.log
+logs/
+
+# Extension specific
+extension/dist/
+extension/.crx
+
+# Python specific
+*.py[cod]
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Docker
+*.tar
