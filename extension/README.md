@@ -56,12 +56,60 @@ npm run dev
 
 ### Load Extension in Chrome
 
-1. Run `npm run dev` or `npm run build`
-2. Open Chrome: `chrome://extensions`
-3. Enable "Developer mode" (top-right toggle)
-4. Click "Load unpacked"
-5. Select the `dist/` directory
-6. Extension will appear with icon and name
+#### Step 1: Build the Extension
+
+```bash
+# Production build (recommended for testing)
+npm run build
+
+# OR Development build (with hot reload)
+npm run dev
+```
+
+**Note:** The extension files will be generated in the `dist/` directory.
+
+#### Step 2: Load the Extension
+
+1. **Open Chrome Extensions Page**
+   - Navigate to: `chrome://extensions`
+   - Or click the puzzle icon → "Manage Extensions"
+
+2. **Enable Developer Mode**
+   - Look for the toggle switch in the **top-right corner**
+   - Turn it **ON**
+
+3. **Load Unpacked Extension**
+   - Click the **"Load unpacked"** button (top-left area)
+   - Navigate to: `/path/to/support-chat-ai/extension/dist/`
+   - Click **"Select"** or **"Open"**
+
+4. **Verify Extension Loaded**
+   - ✅ "Support Chat AI Assistant" should appear in the extensions list
+   - ✅ Version: 0.1.0
+   - ✅ Status: Enabled
+   - ✅ No error messages
+
+5. **Extension Icon**
+   - The extension icon should appear in your Chrome toolbar
+   - Click it to open the popup interface
+
+#### Step 3: Reload After Code Changes
+
+If you're developing and made code changes:
+
+1. **Rebuild the extension:**
+   ```bash
+   npm run build
+   ```
+
+2. **Reload in Chrome:**
+   - Go to `chrome://extensions`
+   - Find "Support Chat AI Assistant"
+   - Click the **refresh/reload icon** (circular arrow)
+   - Or click "Remove" and re-add the extension
+
+3. **Refresh test pages:**
+   - Reload any pages where you're testing the extension
 
 ### Available Scripts
 
@@ -196,8 +244,17 @@ observer.observe(chatContainer, {
 ## Testing
 
 ### Unit Tests
+
+Run the test suite:
 ```bash
+# Run all tests
 npm test
+
+# Run tests in watch mode
+npm run test:ui
+
+# Run with coverage
+npm run test:coverage
 ```
 
 Tests are written with Vitest and React Testing Library.
@@ -225,6 +282,182 @@ global.chrome = {
   storage: { local: { get: vi.fn(), set: vi.fn() } }
 }
 ```
+
+### Manual Testing in Chrome
+
+#### Option 1: Test with the Included Test Page
+
+A test page (`test-page.html`) is included for quick testing:
+
+1. **Load the extension** (see instructions above)
+
+2. **Open the test page:**
+   ```bash
+   # From the extension directory
+   open test-page.html
+
+   # Or open it directly in Chrome
+   ```
+
+3. **Open Chrome DevTools:**
+   - Press `F12` or `Cmd+Option+I` (Mac)
+   - Go to the **Console** tab
+
+4. **Test the extension:**
+   - Click the **"➕ Simulate New Customer Message"** button
+   - A new customer message will be added to the chat
+
+5. **Expected behavior:**
+   - Console logs show extension detecting the platform
+   - After 500-1500ms (simulated API delay), a suggestion panel appears
+   - Panel displays in the **bottom-right corner**
+   - Shows AI-generated suggestion relevant to the message
+   - Displays confidence score (70-95%)
+   - Has a "Copy to Clipboard" button
+
+6. **Verify it works:**
+   - Click "Copy to Clipboard" - text should copy
+   - Dismiss button (X) should remove the panel
+   - Add another message - new suggestion should appear
+
+#### Option 2: Test on Real Support Platforms
+
+The extension is designed for Zendesk and Intercom:
+
+1. **Navigate to a support platform:**
+   - Zendesk: Any `*.zendesk.com` page with chat
+   - Intercom: Any `*.intercom.io` page with chat
+   - Other: Generic chat interfaces (fallback mode)
+
+2. **Open DevTools Console** to see extension logs
+
+3. **Expected console logs:**
+   ```
+   [Platform] Detected: zendesk (or intercom/generic)
+   [Content Script] Content script initializing...
+   [Content Script] Platform detected: zendesk
+   [DOM Observer] Started observing zendesk chat
+   ```
+
+4. **Interact with the chat:**
+   - When a new customer message appears
+   - The extension should auto-detect it
+   - A suggestion panel should appear bottom-right
+
+5. **Check for errors:**
+   - No red errors in console
+   - Suggestion panel renders correctly
+   - Copy button works
+
+#### Debugging Extension Issues
+
+**View Service Worker Logs:**
+1. Go to `chrome://extensions`
+2. Find "Support Chat AI Assistant"
+3. Click **"service worker"** (under "Inspect views")
+4. Service worker DevTools will open
+5. Check Console for background worker logs
+
+**View Content Script Logs:**
+1. Open the target page (test page or support platform)
+2. Press `F12` to open DevTools
+3. Go to Console tab
+4. Content script logs appear here with prefixes like:
+   - `[Platform]`
+   - `[DOM Observer]`
+   - `[Context Extractor]`
+   - `[Content Script]`
+
+**View Popup/Options Logs:**
+1. Right-click the extension icon
+2. Select **"Inspect popup"**
+3. DevTools for popup will open
+
+**Common Console Logs:**
+```
+✅ Success logs:
+[Platform] Detected: generic
+[DOM Observer] Started observing generic chat (mode: suggestion)
+[Content Script] New messages detected, handling...
+[Background] Received message: GET_SUGGESTION
+
+❌ Error logs to watch for:
+[Platform] No chat interface detected on this page
+[DOM Observer] No chat container found
+[Content Script] Failed to get suggestion: [error message]
+```
+
+#### What You Should See
+
+**On the test page:**
+1. **Console logs:**
+   ```
+   [Content Script] Content script initializing...
+   [Platform] Using generic detector (unknown platform)
+   [DOM Observer] Started observing generic chat (mode: suggestion)
+   ```
+
+2. **After clicking "Simulate Message":**
+   ```
+   [DOM Observer] Detected 1 new message(s)
+   [Content Script] New messages detected, handling...
+   [Content Script] Requesting suggestion from background worker...
+   [Background] Received message: GET_SUGGESTION
+   [API Client] Fetching suggestion from API
+   [Content Script] Displaying suggestion: suggestion-[id]
+   ```
+
+3. **Suggestion Panel:**
+   - Appears in bottom-right corner
+   - White card with shadow
+   - Blue pulsing dot indicator
+   - AI-generated response text
+   - Confidence percentage (e.g., "87% confident")
+   - Reasoning section (why this suggestion)
+   - "Copy to Clipboard" button
+
+**Example Screenshot (text description):**
+```
+┌─────────────────────────────────────────┐
+│ 🔵 AI Suggestion       87% confident  X │
+├─────────────────────────────────────────┤
+│ I understand you're inquiring about    │
+│ shipping. I'd be happy to help you     │
+│ track your order. Could you please     │
+│ provide your order number so I can     │
+│ look up the shipping status?           │
+├─────────────────────────────────────────┤
+│ Reasoning: Customer asking about       │
+│ shipping/delivery. Requesting order    │
+│ number to provide tracking info.       │
+├─────────────────────────────────────────┤
+│     [  Copy to Clipboard  ]             │
+└─────────────────────────────────────────┘
+```
+
+#### Testing Checklist
+
+- [ ] Extension loads without errors in `chrome://extensions`
+- [ ] Service worker is active (shows as "service worker" link)
+- [ ] Popup opens when clicking extension icon
+- [ ] Test page loads and shows chat interface
+- [ ] DevTools Console shows platform detection logs
+- [ ] Clicking "Simulate Message" adds new message to chat
+- [ ] Suggestion panel appears after 0.5-1.5 seconds
+- [ ] Suggestion content is relevant to customer message
+- [ ] Confidence score displays (70-95%)
+- [ ] "Copy to Clipboard" button copies text successfully
+- [ ] Dismiss (X) button removes the panel
+- [ ] Multiple messages trigger multiple suggestions
+- [ ] No errors in console (red text)
+
+#### Performance Metrics
+
+Expected performance:
+- **Suggestion latency:** 500-1500ms (mock API delay)
+- **Extension memory:** < 50MB
+- **DOM observation debounce:** 500ms
+- **No memory leaks** after multiple interactions
 
 ## Build & Deployment
 
@@ -278,27 +511,165 @@ npm run build
 - Right-click extension icon → "Inspect popup"
 - Or right-click options page → "Inspect"
 
-## Common Issues
+## Common Issues & Troubleshooting
 
-**Extension not loading:**
-- Check manifest.json syntax
-- Ensure all referenced files exist
-- Check for console errors in service worker
+### Extension Won't Load
 
-**Content script not injecting:**
-- Verify `matches` patterns in manifest.json
-- Check if page matches the URL pattern
-- Ensure `run_at: "document_end"` is set
+**Error: "Could not load manifest"**
+- **Cause:** Missing or malformed `manifest.json`
+- **Fix:** Run `npm run build` to regenerate the manifest
+- **Check:** Verify `dist/manifest.json` exists and is valid JSON
 
-**API calls failing:**
-- Content scripts can't make direct API calls
-- Route through service worker instead
-- Check CORS configuration on backend
+**Error: "Could not load css 'src/content/styles.css'"**
+- **Cause:** Manifest references non-existent CSS file
+- **Fix:** This should be fixed in the latest build. Rebuild with `npm run build`
+- **Manual fix:** Remove CSS reference from `public/manifest.json`
 
-**Type errors:**
-- Run `npm run type-check` to see all errors
-- Ensure @types/chrome is installed
-- Check tsconfig.json configuration
+**Extension appears but shows errors:**
+- Check the service worker console (`chrome://extensions` → "service worker")
+- Look for missing dependencies or import errors
+- Ensure all files in `dist/` were generated correctly
+
+### Extension Loads But Doesn't Work
+
+**No suggestion panel appears:**
+1. **Check the test page matches:**
+   - Test page should have a chat-like structure
+   - Must have elements with class `.chat-wrapper` or `[role="log"]`
+
+2. **Check platform detection:**
+   - Open DevTools Console
+   - Look for: `[Platform] Detected: [platform-name]`
+   - If you see "No chat interface detected", the DOM structure isn't recognized
+
+3. **Check DOM observer:**
+   - Look for: `[DOM Observer] Started observing...`
+   - If missing, observer didn't initialize
+
+4. **Check message detection:**
+   - Click "Simulate Message" on test page
+   - Should see: `[DOM Observer] Detected N new message(s)`
+
+5. **Check API call:**
+   - Should see: `[Background] Received message: GET_SUGGESTION`
+   - Wait 0.5-1.5 seconds for mock API response
+
+**Suggestion panel appears but looks broken:**
+- Check for CSS loading issues
+- Verify Tailwind CSS is compiled in `dist/assets/`
+- Try hard refresh (Cmd+Shift+R)
+
+**"Copy to Clipboard" doesn't work:**
+- Check browser clipboard permissions
+- Try on a non-file:// URL (some browsers restrict clipboard on file URLs)
+
+### Content Script Not Injecting
+
+**Symptoms:**
+- No console logs from content script
+- Extension works on test page but not real sites
+
+**Fixes:**
+1. **Check URL patterns in manifest:**
+   ```json
+   "matches": [
+     "https://*.zendesk.com/*",
+     "https://*.intercom.io/*"
+   ]
+   ```
+   - Content script only runs on these domains
+   - Add more domains as needed
+
+2. **For testing on any page:**
+   - The test page (`test-page.html`) works because it uses generic detection
+   - For other sites, you may need to add the domain to `matches`
+
+3. **Verify page is loaded:**
+   - Content script runs at `document_end`
+   - If DOM loads slowly, observer might miss elements
+   - Check for errors in page console
+
+### Performance Issues
+
+**Extension is slow:**
+- Check network throttling isn't enabled in DevTools
+- Verify mock API delay (500-1500ms is expected)
+- Look for memory leaks (check Chrome Task Manager)
+
+**Browser freezes:**
+- Possible infinite loop in DOM observer
+- Check console for excessive logging
+- Disable extension and reload page
+
+### Build/Development Issues
+
+**TypeScript errors:**
+```bash
+# Check for type errors
+npm run type-check
+
+# Common fixes:
+npm install --save-dev @types/chrome
+```
+
+**Vite build fails:**
+```bash
+# Clear cache and rebuild
+rm -rf node_modules dist
+npm install
+npm run build
+```
+
+**Tests failing:**
+```bash
+# Run specific test file
+npm test -- src/lib/debounce.test.ts
+
+# Check mock setup
+# Chrome APIs must be mocked in src/test/setup.ts
+```
+
+### API/Backend Issues
+
+**Mock API not responding:**
+- Mock API is built-in (no backend needed for Phase 1)
+- Check `src/lib/mock-api.ts` for the implementation
+- Should see API delay in console logs
+
+**When real backend is connected:**
+- Content scripts **CANNOT** make direct API calls (CORS)
+- **MUST** route through service worker
+- Update `src/background/api-client.ts` with real endpoint
+
+### Getting Help
+
+1. **Check console logs** in all contexts:
+   - Service worker console
+   - Page console (content script)
+   - Popup console (if applicable)
+
+2. **Enable verbose logging:**
+   - Development mode shows debug logs
+   - Look for `[DEBUG]` prefixed messages
+
+3. **Common console patterns:**
+   ```
+   ✅ Working:
+   [Content Script] Content script initializing...
+   [Platform] Detected: generic
+   [DOM Observer] Started observing...
+   [Background] Received message: GET_SUGGESTION
+
+   ❌ Not working:
+   [Platform] No chat interface detected
+   [DOM Observer] No chat container found
+   Uncaught Error: ...
+   ```
+
+4. **Create a minimal reproduction:**
+   - Use the included `test-page.html`
+   - Simplify until you isolate the issue
+   - Check if issue is platform-specific
 
 ## Resources
 

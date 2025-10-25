@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Chat Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .chat-wrapper {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            background: #f9f9f9;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .customer {
+            background: #e3f2fd;
+            text-align: left;
+        }
+        .agent {
+            background: #f1f8e9;
+            text-align: right;
+        }
+        .chat-input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .send-button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #add-message {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Chat Interface for Extension</h1>
+    <p>This page simulates a generic chat interface for testing the extension.</p>
+
+    <div class="chat-wrapper" role="log">
+        <div class="message customer">
+            <strong>Customer:</strong>
+            <div class="message-content">Hello! I need help with my order.</div>
+        </div>
+        <div class="message agent">
+            <strong>Agent:</strong>
+            <div class="message-content">Hi there! I'd be happy to help. What's your order number?</div>
+        </div>
+        <div class="message customer">
+            <strong>Customer:</strong>
+            <div class="message-content">It's ORDER-12345. Where is my shipping information?</div>
+        </div>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <button id="add-message">➕ Simulate New Customer Message</button>
+    </div>
+
+    <div style="margin-top: 20px;">
+        <input type="text" class="chat-input" placeholder="Type your message..." id="message-input">
+        <button class="send-button">Send</button>
+    </div>
+
+    <div style="margin-top: 30px; padding: 15px; background: #fff3cd; border-radius: 4px;">
+        <h3>📝 Instructions:</h3>
+        <ol>
+            <li>Make sure the extension is loaded in Chrome (chrome://extensions)</li>
+            <li>Open DevTools (F12) to see console logs from the extension</li>
+            <li>Click "Simulate New Customer Message" to add a message</li>
+            <li>The extension should detect the new message and show an AI suggestion panel</li>
+            <li>Look for the suggestion panel in the bottom-right corner</li>
+        </ol>
+    </div>
+
+    <script>
+        const chatWrapper = document.querySelector('.chat-wrapper');
+        const addMessageBtn = document.getElementById('add-message');
+
+        const sampleMessages = [
+            "I still haven't received my order.",
+            "Can I get a refund?",
+            "This is taking too long!",
+            "I need to speak to a manager.",
+            "What's the status of my shipment?",
+            "Can you help me track my package?",
+            "I want to return this item.",
+            "How do I reset my password?"
+        ];
+
+        let messageIndex = 0;
+
+        addMessageBtn.addEventListener('click', () => {
+            const message = document.createElement('div');
+            message.className = 'message customer';
+            message.innerHTML = `
+                <strong>Customer:</strong>
+                <div class="message-content">${sampleMessages[messageIndex % sampleMessages.length]}</div>
+            `;
+            chatWrapper.appendChild(message);
+            messageIndex++;
+
+            console.log('New customer message added - Extension should detect this!');
+        });
+    </script>
+</body>
+</html>

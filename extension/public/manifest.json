@@ -20,7 +20,6 @@
     {
       "matches": ["https://*.zendesk.com/*", "https://*.intercom.io/*"],
       "js": ["src/content/index.ts"],
-      "css": ["src/content/styles.css"],
       "run_at": "document_end"
     }
   ],
