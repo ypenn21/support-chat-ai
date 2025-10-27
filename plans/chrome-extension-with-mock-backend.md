@@ -21,7 +21,7 @@
 - ✅ Background service worker with message routing
 - ✅ Chrome storage wrapper with type-safe access
 - ✅ Comprehensive error handling and logging system
-- ✅ Unit tests created (23/26 passing - 3 test setup issues to fix in future)
+- ✅ Unit tests created and **all 26/26 tests passing** (100% pass rate)
 - ✅ Production build successful
 - 📦 Build output: `extension/dist/`
 - 🔨 Extension ready to load as unpacked extension in Chrome for manual testing
@@ -44,9 +44,16 @@ npm install --save-dev tailwindcss-animate
 npm run build
 # Result: ✓ Built successfully in 390ms, output to extension/dist/
 
-# Run unit tests
+# Run unit tests (initial)
 npm test -- --run
 # Result: 23/26 tests passing (3 test setup issues in context-extractor.test.ts)
+
+# Fix failing tests by improving mock DOM structure
+# Edit: src/content/context-extractor.test.ts
+
+# Run tests again after fix
+npm test -- --run
+# Result: ✅ All 26/26 tests passing (100% pass rate)
 ```
 
 ### Phase 2: YOLO Mode Components
@@ -2251,7 +2258,7 @@ describe('SafetyMonitor', () => {
 ✅ DOM observation debounced to 500ms
 ✅ All components follow Manifest V3 patterns
 ✅ No inline scripts (CSP compliant)
-✅ Unit test coverage > 70%
+✅ Unit test coverage > 70% (26/26 tests passing - 100% pass rate)
 ✅ **YOLO Mode**: Rate limiting prevents runaway responses (max 1 per 10s)
 
 ### User Experience

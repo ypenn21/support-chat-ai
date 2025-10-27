@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import {
   extractConversationContext,
   getLastCustomerMessage,
@@ -10,23 +10,41 @@ import type { PlatformDetector } from './platforms/types'
 import type { Message } from '@/types'
 
 // Mock platform detector
-const createMockPlatform = (messages: Partial<Message>[]): PlatformDetector => ({
-  detect: () => true,
-  getChatContainer: () => document.createElement('div'),
-  getMessageElements: () =>
-    messages.map(() => document.createElement('div')),
-  getMessageText: vi.fn((element) => {
-    const index = messages.findIndex((_, i) => i === Array.from(element.parentElement?.children || []).indexOf(element))
-    return messages[index]?.content || ''
-  }),
-  getMessageRole: vi.fn((element) => {
-    const index = messages.findIndex((_, i) => i === Array.from(element.parentElement?.children || []).indexOf(element))
-    return messages[index]?.role || 'customer'
-  }),
-  getInputBox: () => null,
-  getSendButton: () => null,
-  getPlatformName: () => 'test'
-})
+const createMockPlatform = (messages: Partial<Message>[]): PlatformDetector => {
+  // Create a proper DOM structure
+  const container = document.createElement('div')
+  const messageElements = messages.map((msg, index) => {
+    const element = document.createElement('div')
+    element.textContent = msg.content || ''
+    element.setAttribute('data-role', msg.role || 'customer')
+    element.setAttribute('data-index', String(index))
+    container.appendChild(element)
+    return element
+  })
+
+  // Create a map for quick lookup
+  const elementToMessage = new Map<HTMLElement, Partial<Message>>()
+  messageElements.forEach((element, index) => {
+    elementToMessage.set(element, messages[index])
+  })
+
+  return {
+    detect: () => true,
+    getChatContainer: () => container,
+    getMessageElements: () => messageElements,
+    getMessageText: (element: HTMLElement) => {
+      const msg = elementToMessage.get(element)
+      return msg?.content || ''
+    },
+    getMessageRole: (element: HTMLElement) => {
+      const msg = elementToMessage.get(element)
+      return msg?.role || 'customer'
+    },
+    getInputBox: () => null,
+    getSendButton: () => null,
+    getPlatformName: () => 'test'
+  }
+}
 
 describe('extractConversationContext', () => {
   it('should extract messages from DOM', () => {
