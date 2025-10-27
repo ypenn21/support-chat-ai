@@ -104,7 +104,13 @@ async function handleSuggestionMode(messages: Message[]): Promise<void> {
 
     // Request suggestion from background worker
     logger.info('Requesting suggestion from background worker...')
-    const response: SuggestResponse = await chrome.runtime.sendMessage({
+
+    // Add timeout to prevent infinite loading
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Request timeout after 10 seconds')), 10000)
+    })
+
+    const messagePromise = chrome.runtime.sendMessage({
       type: 'GET_SUGGESTION',
       payload: {
         platform: platformType,
@@ -112,8 +118,23 @@ async function handleSuggestionMode(messages: Message[]): Promise<void> {
       }
     })
 
+    const response: SuggestResponse = await Promise.race([messagePromise, timeoutPromise])
+
+    logger.info('Received response from background worker')
+    // DEBUG: Log the actual response structure
+    console.log('🔍 DEBUG: Full response object:', response)
+    console.log('🔍 DEBUG: response.suggestions:', response?.suggestions)
+    console.log('🔍 DEBUG: typeof response:', typeof response)
+
     // Remove loading panel
     cleanup()
+
+    // Check if response is undefined (service worker not responding)
+    if (!response) {
+      logger.error('No response from background worker')
+      showErrorPanel('Extension service worker not responding. Try reloading the extension.')
+      return
+    }
 
     // Check for error
     if ('error' in response) {

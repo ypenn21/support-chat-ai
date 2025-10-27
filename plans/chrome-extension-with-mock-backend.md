@@ -54,7 +54,47 @@ npm test -- --run
 # Run tests again after fix
 npm test -- --run
 # Result: ✅ All 26/26 tests passing (100% pass rate)
+
+# Service worker loading issue discovered
+# Issue: Chrome service workers with ES module imports don't load properly
+# The built service-worker-loader.js only contained `import './assets/index.ts-BTLFyjyN.js'`
+# Chrome couldn't resolve the import, service worker showed as "Inactive"
+
+# Solution: Use standalone bundled service worker
+# 1. Created public/service-worker.js with all code in one file (no imports)
+# 2. Removed background section from public/manifest.json (so crx doesn't process it)
+# 3. Created fix-manifest.cjs to add background section after build
+# 4. Updated vite.config.ts to copy service-worker.js to dist/
+
+# Rename fix script to CommonJS
+mv fix-manifest.js fix-manifest.cjs
+# Result: Fixed ES module error (package.json has "type": "module")
+
+# Update build script
+# Edit package.json: "build": "tsc && vite build && node fix-manifest.cjs"
+
+# Final working build
+rm -rf dist && npm run build
+# Result: ✓ Built successfully
+#         ✓ Copied service-worker.js to dist/
+#         ✓ Fixed manifest.json with correct service worker
+
+# Verify manifest points to standalone service worker
+cat dist/manifest.json | grep -A 3 '"background"'
+# Result: "background": { "service_worker": "service-worker.js" }
+#         (No "type": "module" - this is correct!)
 ```
+
+**Service Worker Fix Summary:**
+- **Problem:** Chrome Manifest V3 service workers have issues with ES module imports
+- **Root Cause:** Built service-worker-loader.js contained dynamic import that Chrome couldn't resolve
+- **Solution:** Use standalone bundled service worker (public/service-worker.js)
+- **Implementation:**
+  1. Standalone file with all code (no imports)
+  2. Vite plugin copies file to dist/
+  3. Post-build script (fix-manifest.cjs) updates manifest to reference it
+  4. Manifest has NO `"type": "module"` in background section
+- **Result:** Service worker loads successfully and shows as active in chrome://extensions
 
 ### Phase 2: YOLO Mode Components
 - [ ] Implement Mode Controller (Background Worker)

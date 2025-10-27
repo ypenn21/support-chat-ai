@@ -12,13 +12,15 @@
     "https://*.zendesk.com/*",
     "https://*.intercom.io/*"
   ],
-  "background": {
-    "service_worker": "src/background/index.ts",
-    "type": "module"
-  },
   "content_scripts": [
     {
-      "matches": ["https://*.zendesk.com/*", "https://*.intercom.io/*"],
+      "matches": [
+        "https://*.zendesk.com/*",
+        "https://*.intercom.io/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*",
+        "<all_urls>"
+      ],
       "js": ["src/content/index.ts"],
       "run_at": "document_end"
     }

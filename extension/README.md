@@ -530,6 +530,19 @@ npm run build
 - Look for missing dependencies or import errors
 - Ensure all files in `dist/` were generated correctly
 
+**Service Worker Shows "Inactive":**
+- **Symptom:** Service worker link says "(Inactive)" and can't be clicked
+- **Cause:** Chrome has issues with ES module imports in service workers
+- **Fix:** Already implemented! We use a standalone bundled service worker
+- **Verification:**
+  1. Check `dist/service-worker.js` exists (not just `service-worker-loader.js`)
+  2. Check `dist/manifest.json` has `"service_worker": "service-worker.js"` (no `"type": "module"`)
+  3. Rebuild: `npm run build`
+- **Build process:** The build automatically:
+  - Copies standalone `public/service-worker.js` to `dist/`
+  - Runs `fix-manifest.cjs` to set correct service worker reference
+  - Ensures no ES module imports that Chrome can't resolve
+
 ### Extension Loads But Doesn't Work
 
 **No suggestion panel appears:**
