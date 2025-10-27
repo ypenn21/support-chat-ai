@@ -29,60 +29,65 @@ function generateContextualResponse(
     return "Hi! How can I help you today?"
   }
 
-  // Get the last customer message
-  const lastMessage = conversationContext[conversationContext.length - 1]
-  const lastCustomerMessage = conversationContext
+  // Get the last agent message (what we're responding to)
+  const lastAgentMessage = conversationContext
     .slice()
     .reverse()
-    .find((msg) => msg.role === 'customer')
+    .find((msg) => msg.role === 'agent')
 
-  if (!lastCustomerMessage) {
-    return "I'm here to assist you. What can I help with?"
+  if (!lastAgentMessage) {
+    return "Hello, I need help with an issue I'm experiencing."
   }
 
-  const content = lastCustomerMessage.content.toLowerCase()
+  const content = lastAgentMessage.content.toLowerCase()
 
-  // Contextual responses based on keywords
+  // Contextual customer responses based on what the agent asked
   let response = ''
 
-  // Shipping-related queries
-  if (content.includes('shipping') || content.includes('delivery') || content.includes('tracking')) {
-    response = "I understand you're inquiring about shipping. I'd be happy to help you track your order. Could you please provide your order number so I can look up the shipping status?"
+  // Agent asking for order number or details
+  if (content.includes('order number') || content.includes('order details') || content.includes('provide')) {
+    response = "Sure! My order number is #ORDER-12345. I placed it on December 20th and haven't received any updates since."
   }
-  // Refund-related queries
-  else if (content.includes('refund') || content.includes('return') || content.includes('money back')) {
-    response = "I apologize for any inconvenience. I'd be glad to help you with your refund request. To process this, I'll need your order number and the reason for the return. Our standard refund policy allows returns within 30 days of purchase."
+  // Agent asking for tracking information
+  else if (content.includes('tracking') || content.includes('shipping status')) {
+    response = "Yes, I'd like to know where my package is. The tracking number is TRACK-789456. It's been showing 'in transit' for over a week now."
   }
-  // Account issues
-  else if (content.includes('account') || content.includes('login') || content.includes('password')) {
-    response = "I can help you with your account issue. For security purposes, I'll need to verify some information. Could you please confirm your email address associated with the account?"
+  // Agent asking about refund/return
+  else if (content.includes('refund') || content.includes('return')) {
+    response = "Yes, I'd like to return this item. It's not what I expected and doesn't match the description. Can you help me start the return process?"
   }
-  // Product questions
-  else if (content.includes('product') || content.includes('item') || content.includes('availability')) {
-    response = "Thank you for your interest in our products! I'd be happy to help you find what you're looking for. Could you provide more details about the specific product or features you're interested in?"
+  // Agent asking for account verification
+  else if (content.includes('account') || content.includes('email') || content.includes('verify') || content.includes('username')) {
+    response = "Sure, my account email is customer@example.com. I registered about 6 months ago."
   }
-  // Order status
-  else if (content.includes('order') || content.includes('purchase')) {
-    response = "I can help you check on your order status. Please provide your order number, and I'll look up the current status for you right away."
+  // Agent offering to help or asking what's wrong
+  else if (content.includes('help') || content.includes('assist') || content.includes('concern')) {
+    response = "Thank you! I placed an order but haven't received it yet, and I'm getting worried. Can you check on the status for me?"
   }
-  // Complaints or negative sentiment
-  else if (content.includes('angry') || content.includes('frustrated') || content.includes('terrible') || content.includes('awful')) {
-    response = "I sincerely apologize for the frustration you've experienced. Your concern is important to us, and I want to make this right. Please tell me more about what happened so I can assist you properly."
+  // Agent asking about password/login issues
+  else if (content.includes('password') || content.includes('login')) {
+    response = "I forgot my password and can't access my account. My username is customer123. Can you help me reset it?"
   }
-  // Thanks or positive sentiment
-  else if (content.includes('thank') || content.includes('appreciate') || content.includes('great')) {
-    response = "You're very welcome! I'm glad I could help. Is there anything else I can assist you with today?"
+  // Agent asking for more information
+  else if (content.includes('more details') || content.includes('tell me more') || content.includes('explain')) {
+    response = "Of course. I ordered a blue widget on December 15th, but when it arrived, it was damaged. I'd like a replacement or refund please."
   }
-  // Default generic response
+  // Agent acknowledging issue and working on it
+  else if (content.includes('processing') || content.includes('looking into') || content.includes('checking')) {
+    response = "Thank you for looking into this. I really appreciate your help. Please let me know what you find."
+  }
+  // Default response to agent
   else {
-    response = "Thank you for reaching out. I understand your concern and I'm here to help. Could you provide a bit more detail so I can assist you better?"
+    response = "Thanks for your response. I appreciate your help with this issue. What information do you need from me?"
   }
 
-  // Adjust tone based on preferences
+  // Adjust tone based on preferences (customer tone)
   if (preferences?.tone === 'professional') {
-    response = response.replace("I'd be", "I would be").replace("I'm", "I am")
+    response = response.replace("I'd", "I would").replace("I'm", "I am").replace("Can you", "Could you")
   } else if (preferences?.tone === 'friendly') {
-    response = response + " 😊"
+    response = response + " Thanks again! 😊"
+  } else if (preferences?.tone === 'empathetic') {
+    response = response.replace("Can you", "Could you please").replace("Thanks", "Thank you very much")
   }
 
   // Adjust length based on preferences
@@ -90,13 +95,13 @@ function generateContextualResponse(
     // Simplify to first sentence only
     response = response.split('.')[0] + '.'
   } else if (preferences?.length === 'long') {
-    // Add additional context
-    response += " Please let me know if you have any other questions or concerns."
+    // Add additional context from customer perspective
+    response += " I'm hoping we can resolve this quickly. Please let me know if you need anything else from me."
   }
 
-  // Add greeting if requested
-  if (preferences?.include_greeting && lastMessage.role === 'agent') {
-    const greetings = ['Hi there!', 'Hello!', 'Good day!']
+  // Add greeting if requested (customer greeting)
+  if (preferences?.include_greeting) {
+    const greetings = ['Hi!', 'Hello!', 'Hey there!', 'Hi there!']
     const greeting = greetings[Math.floor(Math.random() * greetings.length)]
     response = `${greeting} ${response}`
   }

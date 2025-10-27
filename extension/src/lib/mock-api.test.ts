@@ -31,8 +31,8 @@ describe('generateMockSuggestion', () => {
       platform: 'zendesk',
       conversation_context: [
         {
-          role: 'customer',
-          content: 'Where is my shipping information?',
+          role: 'agent',
+          content: 'Can you provide your order number?',
           timestamp: Date.now()
         }
       ]
@@ -49,8 +49,8 @@ describe('generateMockSuggestion', () => {
       platform: 'zendesk',
       conversation_context: [
         {
-          role: 'customer',
-          content: 'I want a refund for my purchase',
+          role: 'agent',
+          content: 'Would you like to process a refund?',
           timestamp: Date.now()
         }
       ]
@@ -59,7 +59,7 @@ describe('generateMockSuggestion', () => {
     const response = await generateMockSuggestion(request)
     const suggestion = response.suggestions[0]
 
-    expect(suggestion.content.toLowerCase()).toContain('refund')
+    expect(suggestion.content.toLowerCase()).toContain('return')
   })
 
   it('should have confidence score between 0.7 and 0.95', async () => {
@@ -67,8 +67,8 @@ describe('generateMockSuggestion', () => {
       platform: 'generic',
       conversation_context: [
         {
-          role: 'customer',
-          content: 'Hello',
+          role: 'agent',
+          content: 'How can I help you today?',
           timestamp: Date.now()
         }
       ]
@@ -86,8 +86,8 @@ describe('generateMockSuggestion', () => {
       platform: 'generic',
       conversation_context: [
         {
-          role: 'customer',
-          content: 'Help me',
+          role: 'agent',
+          content: 'Can you provide more details?',
           timestamp: Date.now()
         }
       ],

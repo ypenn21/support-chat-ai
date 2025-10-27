@@ -1,6 +1,6 @@
 # Chrome Extension - Support Chat AI Assistant
 
-This directory contains the Chrome extension that provides AI-powered response suggestions for support agents.
+This directory contains the Chrome extension that provides AI-powered response automation for customers interacting with support agents.
 
 ## Quick Start
 
@@ -340,9 +340,9 @@ The extension is designed for Zendesk and Intercom:
    ```
 
 4. **Interact with the chat:**
-   - When a new customer message appears
+   - When a new support agent message appears
    - The extension should auto-detect it
-   - A suggestion panel should appear bottom-right
+   - A customer response suggestion panel should appear bottom-right
 
 5. **Check for errors:**
    - No red errors in console
@@ -421,15 +421,15 @@ The extension is designed for Zendesk and Intercom:
 ┌─────────────────────────────────────────┐
 │ 🔵 AI Suggestion       87% confident  X │
 ├─────────────────────────────────────────┤
-│ I understand you're inquiring about    │
-│ shipping. I'd be happy to help you     │
-│ track your order. Could you please     │
-│ provide your order number so I can     │
-│ look up the shipping status?           │
+│ Sure! My order number is #12345.       │
+│ I placed it on December 20th and       │
+│ haven't received any shipping updates  │
+│ yet. Could you please help me track    │
+│ it?                                     │
 ├─────────────────────────────────────────┤
-│ Reasoning: Customer asking about       │
-│ shipping/delivery. Requesting order    │
-│ number to provide tracking info.       │
+│ Reasoning: Support agent requested     │
+│ order number. Providing order details  │
+│ and politely asking for help.          │
 ├─────────────────────────────────────────┤
 │     [  Copy to Clipboard  ]             │
 └─────────────────────────────────────────┘
@@ -442,9 +442,9 @@ The extension is designed for Zendesk and Intercom:
 - [ ] Popup opens when clicking extension icon
 - [ ] Test page loads and shows chat interface
 - [ ] DevTools Console shows platform detection logs
-- [ ] Clicking "Simulate Message" adds new message to chat
+- [ ] Clicking "Simulate Message" adds new support agent message to chat
 - [ ] Suggestion panel appears after 0.5-1.5 seconds
-- [ ] Suggestion content is relevant to customer message
+- [ ] Suggestion content is relevant customer response to the support agent's message
 - [ ] Confidence score displays (70-95%)
 - [ ] "Copy to Clipboard" button copies text successfully
 - [ ] Dismiss (X) button removes the panel

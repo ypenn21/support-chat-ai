@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Support Chat AI Assistant",
   "version": "0.1.0",
-  "description": "AI-powered response suggestions for support agents",
+  "description": "AI-powered response automation for customers interacting with support",
   "permissions": [
     "storage",
     "activeTab",

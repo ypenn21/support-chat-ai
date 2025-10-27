@@ -59,25 +59,25 @@
 </head>
 <body>
     <h1>🧪 Test Chat Interface for Extension</h1>
-    <p>This page simulates a generic chat interface for testing the extension.</p>
+    <p>This page simulates a support chat where YOU are the customer and the extension helps you respond to the support agent.</p>
 
     <div class="chat-wrapper" role="log">
         <div class="message customer">
-            <strong>Customer:</strong>
+            <strong>You (Customer):</strong>
             <div class="message-content">Hello! I need help with my order.</div>
         </div>
         <div class="message agent">
-            <strong>Agent:</strong>
+            <strong>Support Agent:</strong>
             <div class="message-content">Hi there! I'd be happy to help. What's your order number?</div>
         </div>
         <div class="message customer">
-            <strong>Customer:</strong>
+            <strong>You (Customer):</strong>
             <div class="message-content">It's ORDER-12345. Where is my shipping information?</div>
         </div>
     </div>
 
     <div style="margin-top: 20px;">
-        <button id="add-message">➕ Simulate New Customer Message</button>
+        <button id="add-message">➕ Simulate New Support Agent Message</button>
     </div>
 
     <div style="margin-top: 20px;">
@@ -90,9 +90,10 @@
         <ol>
             <li>Make sure the extension is loaded in Chrome (chrome://extensions)</li>
             <li>Open DevTools (F12) to see console logs from the extension</li>
-            <li>Click "Simulate New Customer Message" to add a message</li>
-            <li>The extension should detect the new message and show an AI suggestion panel</li>
-            <li>Look for the suggestion panel in the bottom-right corner</li>
+            <li>Click "Simulate New Support Agent Message" to add a message from support</li>
+            <li>The extension should detect the agent's message and suggest YOUR response (as the customer)</li>
+            <li>Look for the AI suggestion panel in the bottom-right corner</li>
+            <li>The suggestion will be what YOU (the customer) should say back to the support agent</li>
         </ol>
     </div>
 
@@ -101,29 +102,29 @@
         const addMessageBtn = document.getElementById('add-message');
 
         const sampleMessages = [
-            "I still haven't received my order.",
-            "Can I get a refund?",
-            "This is taking too long!",
-            "I need to speak to a manager.",
-            "What's the status of my shipment?",
-            "Can you help me track my package?",
-            "I want to return this item.",
-            "How do I reset my password?"
+            "I see your order is still processing. Can you provide more details?",
+            "Let me look into that for you. What was the order date?",
+            "I'll need your account email to proceed with the refund.",
+            "I understand your concern. Let me check the shipping status.",
+            "For security purposes, can you verify your billing address?",
+            "I can help with that! What's your tracking number?",
+            "Our return policy allows 30 days. Would you like to start the process?",
+            "I can assist with password reset. What's your account username?"
         ];
 
         let messageIndex = 0;
 
         addMessageBtn.addEventListener('click', () => {
             const message = document.createElement('div');
-            message.className = 'message customer';
+            message.className = 'message agent';
             message.innerHTML = `
-                <strong>Customer:</strong>
+                <strong>Support Agent:</strong>
                 <div class="message-content">${sampleMessages[messageIndex % sampleMessages.length]}</div>
             `;
             chatWrapper.appendChild(message);
             messageIndex++;
 
-            console.log('New customer message added - Extension should detect this!');
+            console.log('New support agent message added - Extension should suggest YOUR response!');
         });
     </script>
 </body>

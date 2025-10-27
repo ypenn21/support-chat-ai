@@ -36,25 +36,33 @@ async function generateMockSuggestion(request) {
   const delay = Math.floor(Math.random() * 1000) + 500; // 500-1500ms
   await new Promise(resolve => setTimeout(resolve, delay));
   
-  // Get last customer message
-  const lastMessage = request.conversation_context
+  // Get last agent message (what we're responding to as the customer)
+  const lastAgentMessage = request.conversation_context
     ?.slice()
     .reverse()
-    .find(msg => msg.role === 'customer');
-  
-  const content = lastMessage?.content?.toLowerCase() || '';
-  
-  // Generate contextual response
+    .find(msg => msg.role === 'agent');
+
+  const content = lastAgentMessage?.content?.toLowerCase() || '';
+
+  // Generate customer response based on what the agent asked
   let response = '';
-  
-  if (content.includes('shipping') || content.includes('delivery')) {
-    response = "I understand you're inquiring about shipping. I'd be happy to help you track your order. Could you please provide your order number so I can look up the shipping status?";
+
+  if (content.includes('order number') || content.includes('order details') || content.includes('provide')) {
+    response = "Sure! My order number is #ORDER-12345. I placed it on December 20th and haven't received any updates since.";
+  } else if (content.includes('tracking') || content.includes('shipping status')) {
+    response = "Yes, I'd like to know where my package is. The tracking number is TRACK-789456. It's been showing 'in transit' for over a week now.";
   } else if (content.includes('refund') || content.includes('return')) {
-    response = "I apologize for any inconvenience. I'd be glad to help you with your refund request. To process this, I'll need your order number and the reason for the return.";
-  } else if (content.includes('order')) {
-    response = "I can help you check on your order status. Please provide your order number, and I'll look up the current status for you right away.";
+    response = "Yes, I'd like to return this item. It's not what I expected. Can you help me start the return process?";
+  } else if (content.includes('account') || content.includes('email') || content.includes('verify')) {
+    response = "Sure, my account email is customer@example.com. I registered about 6 months ago.";
+  } else if (content.includes('help') || content.includes('assist') || content.includes('concern')) {
+    response = "Thank you! I placed an order but haven't received it yet. Can you check on the status for me?";
+  } else if (content.includes('password') || content.includes('login')) {
+    response = "I forgot my password and can't access my account. My username is customer123. Can you help me reset it?";
+  } else if (content.includes('processing') || content.includes('looking into') || content.includes('checking')) {
+    response = "Thank you for looking into this. I really appreciate your help. Please let me know what you find.";
   } else {
-    response = "Thank you for reaching out. I understand your concern and I'm here to help. Could you provide a bit more detail so I can assist you better?";
+    response = "Thanks for your response. I appreciate your help with this issue. What information do you need from me?";
   }
   
   return {
@@ -62,7 +70,7 @@ async function generateMockSuggestion(request) {
       id: `suggestion-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       content: response,
       confidence: Math.random() * 0.25 + 0.7, // 0.7-0.95
-      reasoning: 'Generated based on customer message keywords'
+      reasoning: 'Generated customer response based on support agent message'
     }],
     metadata: {
       model_used: 'gemini-1.5-pro-mock',

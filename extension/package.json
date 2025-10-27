@@ -1,7 +1,7 @@
 {
   "name": "support-chat-ai-extension",
   "version": "0.1.0",
-  "description": "AI-powered response suggestions for support agents",
+  "description": "AI-powered response automation for customers interacting with support",
   "type": "module",
   "scripts": {
     "dev": "vite",

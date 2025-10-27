@@ -1,6 +1,6 @@
 # Support Chat AI Assistant
 
-AI-powered response suggestions for support agents in real-time. Monitors support chat interfaces (Zendesk, Intercom) and uses Google Vertex AI Gemini to generate contextual response suggestions.
+AI-powered response automation for customers interacting with support agents. Monitors support chat interfaces (Zendesk, Intercom) and uses Google Vertex AI Gemini to automatically generate and send responses on behalf of customers.
 
 ## Architecture
 
@@ -301,13 +301,13 @@ Generate response suggestions
   "platform": "zendesk",
   "conversation_context": [
     {
-      "role": "customer",
-      "content": "My order hasn't arrived yet",
+      "role": "agent",
+      "content": "I see your order is still processing. Can you provide your order number?",
       "timestamp": 1704067200
     }
   ],
   "user_preferences": {
-    "tone": "empathetic",
+    "tone": "polite",
     "length": "medium"
   }
 }
@@ -319,7 +319,7 @@ Generate response suggestions
   "suggestions": [
     {
       "id": "sugg_123",
-      "content": "I understand your concern...",
+      "content": "Sure! My order number is #12345. I placed it on December 20th...",
       "confidence": 0.92
     }
   ],
@@ -353,7 +353,7 @@ pytest --cov=app                   # With coverage
 ## Security & Privacy
 
 **Critical Requirements:**
-- ❌ No customer conversation data stored permanently
+- ❌ No conversation data stored permanently
 - ❌ No API keys or secrets in code
 - ✅ All inputs validated with Pydantic
 - ✅ API keys encrypted in chrome.storage
@@ -362,7 +362,7 @@ pytest --cov=app                   # With coverage
 
 ## Performance Targets
 
-- **Latency**: < 2 seconds (customer message → suggestion)
+- **Latency**: < 2 seconds (support agent message → customer response)
 - **Extension Memory**: < 50MB
 - **DOM Observation**: Debounced to 500ms
 - **Rate Limiting**: 60 requests/minute per user
