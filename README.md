@@ -1,6 +1,6 @@
 # Support Chat AI Assistant
 
-AI-powered response automation for customers interacting with support agents. Monitors support chat interfaces (Zendesk, Intercom) and uses Google Vertex AI Gemini to automatically generate and send responses on behalf of customers.
+AI-powered response automation for customers interacting with support agents. Monitors support chat interfaces (such as Coinbase and Robinhood) and uses Google Vertex AI Gemini to automatically generate and send responses on behalf of customers.
 
 ## Architecture
 
@@ -264,7 +264,7 @@ npm run build
 
 ### Chrome Extension
 - ✅ Manifest V3 compliant
-- ✅ Monitors Zendesk and Intercom chat interfaces
+- ✅ Monitors chat interfaces on platforms like Coinbase and Robinhood
 - ✅ Real-time DOM observation with MutationObserver
 - ✅ React-based popup and options UI with Tailwind CSS
 - ✅ Zustand for state management
@@ -298,7 +298,7 @@ Generate response suggestions
 **Request:**
 ```json
 {
-  "platform": "zendesk",
+  "platform": "coinbase",
   "conversation_context": [
     {
       "role": "agent",

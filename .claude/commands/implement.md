@@ -15,7 +15,7 @@ You are building a Chrome extension that provides AI-powered response suggestion
 **Before implementing**:
 1. Understand which component this belongs to (content script, background, popup, or backend)
 2. Check existing code to maintain consistency
-3. Consider platform-specific requirements (Zendesk, Intercom, etc.)
+3. Consider platform-specific requirements (Coinbase, Robinhood, etc.)
 4. Think about error cases and edge conditions
 
 **After implementing**:
