@@ -26,21 +26,21 @@ A Chrome extension that provides AI-powered response suggestions to support agen
 │   ├── code-review.md       # Agent: Automated code reviews
 │   └── debugger.md          # Agent: Error & debugging specialist
 │
-├── commands/                # Slash commands (invoked with /)
-│   ├── explain.md           # /explain - Explain code
-│   ├── gcp-setup.md         # /gcp-setup - Setup GCP infrastructure
-│   ├── implement.md         # /implement - Implement features
-│   ├── review.md            # /review - Manual code review command
-│   ├── setup.md             # /setup - Initialize project
-│   └── test.md              # /test - Generate tests
-│
-└── docs/                    # Reference documentation (not auto-loaded)
-    ├── architecture-diagrams.md   # Visual architecture
-    ├── dockerfile-example.md      # Docker configuration
-    ├── project-context.md         # Development patterns
-    ├── project-design.md          # Full architecture
-    ├── sub-agents-guide.md        # How to create agents
-    └── tech-stack.md              # Technology details
+└── commands/                # Slash commands (invoked with /)
+    ├── explain.md           # /explain - Explain code
+    ├── gcp-setup.md         # /gcp-setup - Setup GCP infrastructure
+    ├── implement.md         # /implement - Implement features
+    ├── review.md            # /review - Manual code review command
+    ├── setup.md             # /setup - Initialize project
+    └── test.md              # /test - Generate tests
+
+docs/
+├── architecture-diagrams.md   # Visual architecture
+├── dockerfile-example.md      # Docker configuration
+├── project-context.md         # Development patterns
+├── project-design.md          # Full architecture
+├── sub-agents-guide.md        # How to create agents
+└── tech-stack.md              # Technology details
 ```
 
 ## What Gets Loaded Automatically?
@@ -50,7 +50,7 @@ A Chrome extension that provides AI-powered response suggestions to support agen
 | `/CLAUDE.md` | ✅ Yes | On every Claude Code session start |
 | `.claude/commands/*.md` | ⚡ On-demand | When you type `/command-name` |
 | `.claude/agents/*.md` | 🤖 On-demand | When invoked or triggered |
-| `.claude/docs/*.md` | ❌ No | When explicitly requested |
+| `docs/*.md` | ❌ No | When explicitly requested |
 
 ## How to Use
 
@@ -65,7 +65,7 @@ Type the command in chat:
 /explain            → Explain code architecture
 ```
 
-### Agents
+### Agents (Claude-specific feature)
 Invoke by name or trigger automatically:
 ```
 "Use code-reviewer agent"
@@ -82,7 +82,7 @@ Invoke by name or trigger automatically:
 ### Documentation
 Reference when needed:
 ```
-"Read .claude/docs/tech-stack.md"
+"Read docs/tech-stack.md"
 "Show me the architecture diagrams"
 "What's in project-design.md?"
 ```
@@ -199,12 +199,12 @@ cd backend && docker build -t support-chat-ai-backend .
 
 | Need | Read |
 |------|------|
-| Overall architecture | `/CLAUDE.md` or `.claude/docs/project-design.md` |
-| Technology stack | `.claude/docs/tech-stack.md` |
-| Development patterns | `.claude/docs/project-context.md` |
-| Visual diagrams | `.claude/docs/architecture-diagrams.md` |
-| Docker setup | `.claude/docs/dockerfile-example.md` |
-| Creating agents | `.claude/docs/sub-agents-guide.md` |
+| Overall architecture | `/CLAUDE.md` or `docs/project-design.md` |
+| Technology stack | `docs/tech-stack.md` |
+| Development patterns | `docs/project-context.md` |
+| Visual diagrams | `docs/architecture-diagrams.md` |
+| Docker setup | `docs/dockerfile-example.md` |
+| Creating agents | `docs/sub-agents-guide.md` |
 
 ## Security & Privacy
 
@@ -233,6 +233,6 @@ cd backend && docker build -t support-chat-ai-backend .
 ## Getting Help
 
 - **Claude Code help**: Type `/help`
-- **Project documentation**: Files in `.claude/docs/`
-- **Agents guide**: `.claude/docs/sub-agents-guide.md`
+- **Project documentation**: Files in `docs/`
+- **Agents guide**: `docs/sub-agents-guide.md`
 - **Architecture details**: `/CLAUDE.md` in project root

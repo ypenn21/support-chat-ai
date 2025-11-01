@@ -1,8 +1,10 @@
-# Agents Guide
+# Claude Agents Guide
 
 ## What Are Agents?
 
-Agents (formerly called "sub-agents") are specialized AI assistants that you can configure to handle specific tasks autonomously. They're defined in markdown files with YAML frontmatter in the `.claude/agents/` directory.
+Agents (formerly called "sub-agents") are a feature of Claude Code that allows you to configure specialized AI assistants to handle specific tasks autonomously. They are defined in markdown files with YAML frontmatter in the `.claude/agents/` directory.
+
+**Note:** This feature is specific to Claude Code.
 
 ## File Location
 
@@ -403,7 +405,7 @@ If your agent isn't working:
 
 ## Summary
 
-Your project now has two specialized agents:
+Your project now has two specialized agents for Claude Code:
 
 ### code-reviewer (`.claude/agents/code-review.md`)
 - ✅ Reviews Chrome extension code (Manifest V3, message passing, CORS)
