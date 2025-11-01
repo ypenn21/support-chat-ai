@@ -11,7 +11,7 @@
 
 import { waitForPlatform, detectPlatformType } from './platforms'
 import { createChatObserver, waitForChatContainer } from './dom-observer'
-import type { Message, SuggestResponse } from '@/types'
+import type { Message, SuggestResponse, AutonomousResponse, YoloState } from '@/types'
 import {
   mountSuggestionPanel,
   showLoadingPanel,
@@ -20,13 +20,18 @@ import {
 } from './ui-injector'
 import { createLogger } from '@/lib/logger'
 import { setupGlobalErrorHandler } from '@/lib/error-handler'
-import { getMode } from '@/lib/storage'
+import { getMode, getYoloState } from '@/lib/storage'
+import { AutoResponder } from './auto-responder'
+import { SafetyMonitor } from './safety-monitor'
 
 const logger = createLogger('Content Script')
 
 // Global state
 let cleanupObserver: (() => void) | null = null
 let currentMode: 'suggestion' | 'yolo' = 'suggestion'
+let autoResponder: AutoResponder | null = null
+let safetyMonitor: SafetyMonitor | null = null
+let yoloState: YoloState | null = null
 
 /**
  * Initialize content script
@@ -41,6 +46,17 @@ async function initialize(): Promise<void> {
   currentMode = await getMode()
   logger.info(`Operating in ${currentMode} mode`)
 
+  // Get YOLO state if in YOLO mode
+  if (currentMode === 'yolo') {
+    yoloState = await getYoloState()
+    if (!yoloState) {
+      logger.error('YOLO mode enabled but no goal configured. Switching to suggestion mode.')
+      currentMode = 'suggestion'
+    } else {
+      logger.info(`YOLO goal: ${yoloState.goal.description}`)
+    }
+  }
+
   // Wait for platform to load (with 10 second timeout)
   logger.info('Waiting for chat platform to load...')
   const platform = await waitForPlatform(10000)
@@ -52,6 +68,13 @@ async function initialize(): Promise<void> {
 
   const platformType = platform.getPlatformName()
   logger.info(`Platform detected: ${platformType}`)
+
+  // Initialize YOLO mode components if needed
+  if (currentMode === 'yolo' && yoloState) {
+    autoResponder = new AutoResponder(platform, 3000) // 3 second preview delay
+    safetyMonitor = new SafetyMonitor(yoloState.safetyConstraints)
+    logger.info('YOLO mode components initialized')
+  }
 
   // Wait for chat container to appear
   logger.info('Waiting for chat container...')
@@ -83,8 +106,7 @@ async function handleNewMessages(messages: Message[]): Promise<void> {
   if (currentMode === 'suggestion') {
     await handleSuggestionMode(messages)
   } else if (currentMode === 'yolo') {
-    // YOLO mode not yet implemented in Phase 1
-    logger.info('YOLO mode detected, but not yet implemented in Phase 1')
+    await handleYoloMode(messages)
   }
 }
 
@@ -171,7 +193,144 @@ async function handleSuggestionMode(messages: Message[]): Promise<void> {
 }
 
 /**
- * Handle mode changes from popup/background
+ * Handle YOLO Mode (Autonomous Response)
+ * Request autonomous response and auto-send
+ */
+async function handleYoloMode(messages: Message[]): Promise<void> {
+  logger.info('Handling YOLO Mode')
+
+  if (!yoloState || !autoResponder || !safetyMonitor) {
+    logger.error('YOLO mode not properly initialized')
+    return
+  }
+
+  // Check safety before proceeding
+  const lastMessage = messages[messages.length - 1]
+  const safetyCheck = safetyMonitor.checkMessage(lastMessage, yoloState.goalState)
+
+  if (safetyCheck.shouldEscalate) {
+    logger.warn('Safety escalation triggered:', safetyCheck.reason)
+    await handleEscalation(safetyCheck.reason || 'Safety check failed')
+    return
+  }
+
+  try {
+    // Get the platform type for the request
+    const platformType = detectPlatformType()
+
+    // Request autonomous response from background worker
+    logger.info('Requesting autonomous response...')
+
+    const response: AutonomousResponse = await chrome.runtime.sendMessage({
+      type: 'GET_AUTONOMOUS_RESPONSE',
+      payload: {
+        platform: platformType,
+        conversation_context: messages.slice(-10),
+        goal: yoloState.goal,
+        goal_state: yoloState.goalState,
+        safety_constraints: yoloState.safetyConstraints
+      }
+    })
+
+    logger.info('Received autonomous response, action:', response.action)
+
+    // Handle different actions
+    switch (response.action) {
+      case 'respond':
+        if (response.response) {
+          // Check confidence
+          if (!safetyMonitor.checkConfidence(response.response.confidence)) {
+            logger.warn('Low confidence response, escalating')
+            await handleEscalation('AI confidence too low')
+            return
+          }
+
+          // Auto-send response
+          logger.info('Auto-sending response:', response.response.content)
+          await autoResponder.sendResponse(response.response.content, true) // With preview
+
+          // Update goal state
+          await chrome.runtime.sendMessage({
+            type: 'UPDATE_GOAL_STATE',
+            payload: { goalState: response.goal_state }
+          })
+
+          // Broadcast conversation update
+          await chrome.runtime.sendMessage({
+            type: 'CONVERSATION_UPDATE',
+            payload: { messages: [...messages, {
+              role: 'agent',
+              content: response.response.content,
+              timestamp: Date.now()
+            }]}
+          })
+
+          logger.info('YOLO response sent successfully')
+        }
+        break
+
+      case 'escalate':
+        logger.warn('AI decided to escalate:', response.reason)
+        await handleEscalation(response.reason || 'AI escalation')
+        break
+
+      case 'goal_complete':
+        logger.info('Goal completed!', response.reason)
+        await handleGoalCompletion(response.reason || 'Goal achieved')
+        break
+
+      case 'need_info':
+        logger.info('Waiting for more information:', response.reason)
+        // Do nothing, wait for next message
+        break
+
+      default:
+        logger.warn('Unknown action from AI:', response.action)
+    }
+  } catch (error) {
+    logger.error('Failed to handle YOLO mode:', error)
+    await handleEscalation(`Error: ${error}`)
+  }
+}
+
+/**
+ * Handle escalation - switch back to suggestion mode
+ */
+async function handleEscalation(reason: string): Promise<void> {
+  logger.warn('Escalating to human:', reason)
+
+  // Switch to suggestion mode
+  await chrome.runtime.sendMessage({
+    type: 'SET_MODE',
+    payload: { mode: 'suggestion' }
+  })
+
+  currentMode = 'suggestion'
+
+  // Show notification
+  showErrorPanel(`Escalated: ${reason}. Switching to manual mode.`)
+}
+
+/**
+ * Handle goal completion
+ */
+async function handleGoalCompletion(reason: string): Promise<void> {
+  logger.info('Goal completed:', reason)
+
+  // Switch to suggestion mode
+  await chrome.runtime.sendMessage({
+    type: 'SET_MODE',
+    payload: { mode: 'suggestion' }
+  })
+
+  currentMode = 'suggestion'
+
+  // Show success notification (could create a success panel)
+  logger.info(`✅ Goal completed: ${reason}`)
+}
+
+/**
+ * Handle mode changes and other runtime messages
  */
 chrome.runtime.onMessage.addListener((message) => {
   if (message.type === 'MODE_CHANGED') {
@@ -186,6 +345,9 @@ chrome.runtime.onMessage.addListener((message) => {
       }
       initialize()
     }
+  } else if (message.type === 'EMERGENCY_STOP') {
+    logger.warn('Emergency stop received!')
+    handleEscalation('Emergency stop activated by user')
   }
 })
 
