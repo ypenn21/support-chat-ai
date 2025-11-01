@@ -2,30 +2,28 @@ import type { MessageRole } from '@/types'
 import type { PlatformDetector } from './types'
 
 /**
- * Zendesk Platform Detector
- * Detects and interacts with Zendesk Chat interfaces
+ * Coinbase Platform Detector
+ * Detects and interacts with Coinbase Chat interfaces
  */
-export const zendeskDetector: PlatformDetector = {
+export const coinbaseDetector: PlatformDetector = {
   detect(): boolean {
-    // Check if URL contains zendesk.com
-    if (window.location.hostname.includes('zendesk.com')) {
+    // Check if URL contains coinbase.com
+    if (window.location.hostname.includes('coinbase.com')) {
       return true
     }
 
-    // Check for Zendesk-specific elements
-    const hasZendeskWidget = document.querySelector('[data-test-id="chat-widget"]') !== null
-    const hasZendeskChat = document.querySelector('.zendesk-chat') !== null
+    // Check for Coinbase-specific elements
+    const hasCoinbaseWidget = document.querySelector('[data-coinbase-widget]') !== null
+    const hasCoinbaseChat = document.querySelector('.coinbase-chat') !== null
 
-    return hasZendeskWidget || hasZendeskChat
+    return hasCoinbaseWidget || hasCoinbaseChat
   },
 
   getChatContainer(): HTMLElement | null {
     // Try multiple selectors with fallbacks
     const selectors = [
-      '[data-test-id="chat-log"]',
-      '.chat-wrapper',
-      '.chat-messages',
-      '[role="log"]',
+      '[data-testid="chat-log"]',
+      '.chat-container',
       '.conversation-panel'
     ]
 
@@ -43,9 +41,8 @@ export const zendeskDetector: PlatformDetector = {
 
     // Try multiple message selectors
     const selectors = [
-      '[data-test-id="chat-message"]',
-      '.chat-msg',
-      '.message',
+      '[data-testid="chat-message"]',
+      '.chat-message',
       '[role="article"]'
     ]
 
@@ -60,8 +57,7 @@ export const zendeskDetector: PlatformDetector = {
   getMessageText(element: HTMLElement): string {
     // Try to find message content with multiple selectors
     const contentSelectors = [
-      '[data-test-id="message-content"]',
-      '.chat-msg-text',
+      '[data-testid="message-content"]',
       '.message-text',
       '.message-content'
     ]
@@ -82,7 +78,6 @@ export const zendeskDetector: PlatformDetector = {
     const className = element.className || ''
     const dataRole = element.getAttribute('data-role') || ''
 
-    // Check for agent indicators
     if (
       className.includes('agent') ||
       className.includes('staff') ||
@@ -91,37 +86,22 @@ export const zendeskDetector: PlatformDetector = {
       return 'agent'
     }
 
-    // Check for customer indicators
     if (
       className.includes('customer') ||
-      className.includes('visitor') ||
       className.includes('user') ||
       dataRole === 'customer'
     ) {
       return 'customer'
     }
 
-    // Fallback: check if message is on right side (usually agent) or left (customer)
-    const style = window.getComputedStyle(element)
-    const textAlign = style.textAlign
-    const marginLeft = parseInt(style.marginLeft)
-    const marginRight = parseInt(style.marginRight)
-
-    if (textAlign === 'right' || marginLeft > marginRight) {
-      return 'agent'
-    }
-
-    // Default to customer
     return 'customer'
   },
 
   getInputBox(): HTMLElement | null {
     const selectors = [
-      '[data-test-id="chat-input"]',
-      '.chat-input',
+      '[data-testid="chat-input"]',
       'textarea[placeholder*="Type"]',
-      '[contenteditable="true"]',
-      'input[type="text"]'
+      '[contenteditable="true"]'
     ]
 
     for (const selector of selectors) {
@@ -134,11 +114,9 @@ export const zendeskDetector: PlatformDetector = {
 
   getSendButton(): HTMLElement | null {
     const selectors = [
-      '[data-test-id="send-button"]',
-      '.chat-send-button',
+      '[data-testid="send-button"]',
       'button[aria-label*="Send"]',
-      'button[type="submit"]',
-      '.send-btn'
+      'button[type="submit"]'
     ]
 
     for (const selector of selectors) {
@@ -150,6 +128,7 @@ export const zendeskDetector: PlatformDetector = {
   },
 
   getPlatformName(): string {
-    return 'zendesk'
+    return 'coinbase'
   }
 }
+

@@ -9,14 +9,14 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://*.zendesk.com/*",
-    "https://*.intercom.io/*"
+    "https://*.coinbase.com/*",
+    "https://*.robinhood.com/*"
   ],
   "content_scripts": [
     {
       "matches": [
-        "https://*.zendesk.com/*",
-        "https://*.intercom.io/*",
+        "https://*.coinbase.com/*",
+        "https://*.robinhood.com/*",
         "http://localhost/*",
         "http://127.0.0.1/*",
         "<all_urls>"

@@ -725,6 +725,7 @@ describe('Message Router Integration', () => {
 
   describe('Error Recovery', () => {
     it('should catch and format errors in async handlers', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
       const { fetchSuggestion } = await import('./api-client')
       const { formatErrorForUser } = await import('@/lib/error-handler')
       const { getPreferences } = await import('@/lib/storage')
@@ -750,6 +751,7 @@ describe('Message Router Integration', () => {
       expect(sendResponseSpy).toHaveBeenCalledWith({
         error: 'Formatted: Test error'
       })
+      consoleSpy.mockRestore()
     })
   })
 

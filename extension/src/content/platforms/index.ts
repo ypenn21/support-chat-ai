@@ -1,7 +1,7 @@
 import type { Platform } from '@/types'
 import type { PlatformDetector } from './types'
-import { zendeskDetector } from './zendesk'
-import { intercomDetector } from './intercom'
+import { coinbaseDetector } from './coinbase'
+import { robinhoodDetector } from './robinhood'
 import { genericDetector } from './generic'
 
 /**
@@ -9,16 +9,16 @@ import { genericDetector } from './generic'
  * Returns the appropriate platform detector
  */
 export function detectPlatform(): PlatformDetector | null {
-  // Try Zendesk first
-  if (zendeskDetector.detect()) {
-    console.log('[Platform] Detected: Zendesk')
-    return zendeskDetector
+  // Try Coinbase first
+  if (coinbaseDetector.detect()) {
+    console.log('[Platform] Detected: Coinbase')
+    return coinbaseDetector
   }
 
-  // Try Intercom
-  if (intercomDetector.detect()) {
-    console.log('[Platform] Detected: Intercom')
-    return intercomDetector
+  // Try Robinhood
+  if (robinhoodDetector.detect()) {
+    console.log('[Platform] Detected: Robinhood')
+    return robinhoodDetector
   }
 
   // Check if there's any chat-like interface using generic detector
@@ -45,8 +45,8 @@ export function detectPlatformType(): Platform {
 
   const platformName = detector.getPlatformName()
 
-  if (platformName === 'zendesk') return 'zendesk'
-  if (platformName === 'intercom') return 'intercom'
+  if (platformName === 'coinbase') return 'coinbase'
+  if (platformName === 'robinhood') return 'robinhood'
   return 'generic'
 }
 
@@ -85,5 +85,5 @@ export async function waitForPlatform(
 }
 
 // Export platform detectors for testing
-export { zendeskDetector, intercomDetector, genericDetector }
+export { coinbaseDetector, robinhoodDetector, genericDetector }
 export type { PlatformDetector }

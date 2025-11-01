@@ -144,10 +144,13 @@ describe('ModeSelector', () => {
 
       render(<ModeSelector />)
 
+      const yoloBtn = await screen.findByText(/YOLO Mode/)
+
       await waitFor(() => {
-        const yoloBtn = screen.getByText(/YOLO Mode/)
-        fireEvent.click(yoloBtn)
+        expect(yoloBtn).not.toBeDisabled()
       })
+
+      fireEvent.click(yoloBtn)
 
       await waitFor(() => {
         expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
