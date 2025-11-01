@@ -128,16 +128,23 @@ export async function clearAllStorage(): Promise<void> {
 
 /**
  * Listen for mode changes
+ * Returns cleanup function to remove listener
  */
-export function onModeChange(callback: (mode: 'suggestion' | 'yolo') => void): void {
-  chrome.storage.onChanged.addListener((changes, areaName) => {
+export function onModeChange(callback: (mode: 'suggestion' | 'yolo') => void): () => void {
+  const listener = (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
     if (areaName === 'local' && changes[STORAGE_KEYS.MODE]) {
       const newMode = changes[STORAGE_KEYS.MODE].newValue
       if (newMode) {
         callback(newMode)
       }
     }
-  })
+  }
+
+  chrome.storage.onChanged.addListener(listener)
+
+  return () => {
+    chrome.storage.onChanged.removeListener(listener)
+  }
 }
 
 /**

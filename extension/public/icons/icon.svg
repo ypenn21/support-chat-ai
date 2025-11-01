@@ -1,0 +1,18 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#3B82F6"/>
+
+  <!-- Chat bubble -->
+  <path d="M38 45C38 40.0294 42.0294 36 47 36H81C85.9706 36 90 40.0294 90 45V65C90 69.9706 85.9706 74 81 74H57L45 82V74H47C42.0294 74 38 69.9706 38 65V45Z" fill="white"/>
+
+  <!-- AI sparkle icon -->
+  <path d="M64 48L66 54L72 56L66 58L64 64L62 58L56 56L62 54L64 48Z" fill="#3B82F6"/>
+
+  <!-- Bottom chat bubble (suggestion) -->
+  <path d="M48 72C48 69.7909 49.7909 68 52 68H86C88.2091 68 90 69.7909 90 72V84C90 86.2091 88.2091 88 86 88H68L60 94V88H52C49.7909 88 48 86.2091 48 84V72Z" fill="#60A5FA" opacity="0.8"/>
+
+  <!-- Text lines in main bubble -->
+  <rect x="48" y="48" width="24" height="3" rx="1.5" fill="#3B82F6" opacity="0.3"/>
+  <rect x="48" y="55" width="32" height="3" rx="1.5" fill="#3B82F6" opacity="0.3"/>
+  <rect x="48" y="62" width="20" height="3" rx="1.5" fill="#3B82F6" opacity="0.3"/>
+</svg>

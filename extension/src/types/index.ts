@@ -11,12 +11,13 @@ export interface Message {
 export type Platform = 'zendesk' | 'intercom' | 'generic'
 
 // User preferences
-export type Tone = 'professional' | 'friendly' | 'empathetic'
+export type Tone = 'professional' | 'friendly' | 'empathetic' | 'casual'
 export type Length = 'short' | 'medium' | 'long'
 
 export interface UserPreferences {
   tone?: Tone
   length?: Length
+  language?: string
   include_greeting?: boolean
 }
 
