@@ -17,14 +17,18 @@ export function Settings() {
     include_greeting: false
   })
   const [isSaving, setIsSaving] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const [saveMessage, setSaveMessage] = useState<string | null>(null)
 
   useEffect(() => {
     // Load preferences from storage on mount
+    setIsLoading(true)
     getPreferences().then((p) => {
       if (p) {
         setPrefs(p)
       }
+    }).finally(() => {
+      setIsLoading(false)
     })
   }, [])
 
@@ -51,7 +55,10 @@ export function Settings() {
         Customize how AI suggestions are generated
       </p>
 
-      <form className="space-y-3">
+      {isLoading ? (
+        <div className="text-sm text-gray-600 py-4 text-center">Loading settings...</div>
+      ) : (
+        <form className="space-y-3">
         <div>
           <label className="block text-sm font-medium mb-1">Tone</label>
           <select
@@ -131,6 +138,7 @@ export function Settings() {
           </div>
         )}
       </form>
+      )}
     </div>
   )
 }

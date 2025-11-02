@@ -7,13 +7,18 @@ export function ModeSelector() {
   const [yoloState, setYoloState] = useState<YoloState | null>(null)
 
   useEffect(() => {
-    // Load current mode
+    // Load current mode and yolo state
     getMode().then(setMode)
     getYoloState().then(setYoloState)
 
     // Listen for changes
-    onModeChange(setMode)
-    onYoloStateChange(setYoloState)
+    const cleanupMode = onModeChange(setMode)
+    const cleanupYolo = onYoloStateChange(setYoloState)
+
+    return () => {
+      cleanupMode()
+      cleanupYolo()
+    }
   }, [])
 
   const handleModeChange = async (newMode: 'suggestion' | 'yolo') => {

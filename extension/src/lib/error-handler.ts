@@ -42,21 +42,33 @@ export class StorageError extends ExtensionError {
 
 /**
  * Global error handler for uncaught errors
+ * Works in both browser context (content scripts, popup) and service worker context (background)
  */
 export function setupGlobalErrorHandler(): void {
-  // Handle uncaught errors
-  window.addEventListener('error', (event) => {
-    logger.error('Uncaught error:', event.error)
-    // Prevent default error handling
-    event.preventDefault()
-  })
+  // Check if we're in a browser context (window exists) or service worker context
+  if (typeof window === 'undefined') {
+    // Service worker context - use self instead of window
+    self.addEventListener('error', (event) => {
+      logger.error('Uncaught error in service worker:', event.error || event)
+    })
 
-  // Handle unhandled promise rejections
-  window.addEventListener('unhandledrejection', (event) => {
-    logger.error('Unhandled promise rejection:', event.reason)
-    // Prevent default error handling
-    event.preventDefault()
-  })
+    self.addEventListener('unhandledrejection', (event) => {
+      logger.error('Unhandled promise rejection in service worker:', event.reason)
+    })
+  } else {
+    // Browser context (content scripts, popup, options) - use window
+    window.addEventListener('error', (event) => {
+      logger.error('Uncaught error:', event.error)
+      // Prevent default error handling
+      event.preventDefault()
+    })
+
+    window.addEventListener('unhandledrejection', (event) => {
+      logger.error('Unhandled promise rejection:', event.reason)
+      // Prevent default error handling
+      event.preventDefault()
+    })
+  }
 }
 
 /**

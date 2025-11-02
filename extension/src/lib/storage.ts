@@ -150,15 +150,21 @@ export function onModeChange(callback: (mode: 'suggestion' | 'yolo') => void): (
 /**
  * Listen for preferences changes
  */
-export function onPreferencesChange(callback: (preferences: UserPreferences) => void): void {
-  chrome.storage.onChanged.addListener((changes, areaName) => {
+export function onPreferencesChange(callback: (preferences: UserPreferences) => void): () => void {
+  const listener = (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
     if (areaName === 'local' && changes[STORAGE_KEYS.PREFERENCES]) {
       const newPreferences = changes[STORAGE_KEYS.PREFERENCES].newValue
       if (newPreferences) {
         callback(newPreferences)
       }
     }
-  })
+  }
+
+  chrome.storage.onChanged.addListener(listener)
+
+  return () => {
+    chrome.storage.onChanged.removeListener(listener)
+  }
 }
 
 /**
@@ -222,13 +228,19 @@ export async function clearYoloState(): Promise<void> {
 /**
  * Listen for YOLO state changes
  */
-export function onYoloStateChange(callback: (state: YoloState | null) => void): void {
-  chrome.storage.onChanged.addListener((changes, areaName) => {
+export function onYoloStateChange(callback: (state: YoloState | null) => void): () => void {
+  const listener = (changes: { [key: string]: chrome.storage.StorageChange }, areaName: string) => {
     if (areaName === 'local' && changes[STORAGE_KEYS.YOLO_STATE]) {
       const newState = changes[STORAGE_KEYS.YOLO_STATE].newValue || null
       callback(newState)
     }
-  })
+  }
+
+  chrome.storage.onChanged.addListener(listener)
+
+  return () => {
+    chrome.storage.onChanged.removeListener(listener)
+  }
 }
 
 /**

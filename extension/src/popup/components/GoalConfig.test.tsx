@@ -119,7 +119,8 @@ describe('GoalConfig', () => {
             constraints: {
               max_turns: 8,
               escalation_keywords: ['angry', 'manager'],
-              stop_if_confused: true
+              stop_if_confused: true,
+              min_confidence: 0.7
             }
           }
         })
