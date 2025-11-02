@@ -9,8 +9,8 @@ import { useState } from 'react'
  */
 export function PlatformConfiguration() {
   const [enabledPlatforms, setEnabledPlatforms] = useState({
-    zendesk: true,
-    intercom: true,
+    coinbase: true,
+    robinhood: true,
     generic: true
   })
 
@@ -79,32 +79,32 @@ export function PlatformConfiguration() {
           <div className="flex items-center p-3 border rounded">
             <input
               type="checkbox"
-              id="zendesk"
+              id="coinbase"
               className="mr-3"
-              checked={enabledPlatforms.zendesk}
-              onChange={() => handleTogglePlatform('zendesk')}
+              checked={enabledPlatforms.coinbase}
+              onChange={() => handleTogglePlatform('coinbase')}
             />
             <div>
-              <label htmlFor="zendesk" className="font-medium">
-                Zendesk
+              <label htmlFor="coinbase" className="font-medium">
+                Coinbase
               </label>
-              <p className="text-xs text-gray-500">Support chat platform (*.zendesk.com)</p>
+              <p className="text-xs text-gray-500">Cryptocurrency trading platform (*.coinbase.com)</p>
             </div>
           </div>
 
           <div className="flex items-center p-3 border rounded">
             <input
               type="checkbox"
-              id="intercom"
+              id="robinhood"
               className="mr-3"
-              checked={enabledPlatforms.intercom}
-              onChange={() => handleTogglePlatform('intercom')}
+              checked={enabledPlatforms.robinhood}
+              onChange={() => handleTogglePlatform('robinhood')}
             />
             <div>
-              <label htmlFor="intercom" className="font-medium">
-                Intercom
+              <label htmlFor="robinhood" className="font-medium">
+                Robinhood
               </label>
-              <p className="text-xs text-gray-500">Messaging platform (*.intercom.io)</p>
+              <p className="text-xs text-gray-500">Stock/crypto trading platform (*.robinhood.com)</p>
             </div>
           </div>
 

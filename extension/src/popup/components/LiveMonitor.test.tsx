@@ -222,10 +222,10 @@ describe('LiveMonitor', () => {
 
       await waitFor(() => {
         // Should only show messages 6-10
-        expect(screen.queryByText(/Message 1/)).toBeNull()
-        expect(screen.queryByText(/Message 5/)).toBeNull()
-        expect(screen.getByText(/Message 6/)).toBeDefined()
-        expect(screen.getByText(/Message 10/)).toBeDefined()
+        expect(screen.queryByText(/Message 1$/)).toBeNull()
+        expect(screen.queryByText(/Message 5$/)).toBeNull()
+        expect(screen.getByText(/Message 6$/)).toBeDefined()
+        expect(screen.getByText(/Message 10$/)).toBeDefined()
       })
     })
 
@@ -258,9 +258,9 @@ describe('LiveMonitor', () => {
       })
 
       await waitFor(() => {
-        const messageText = screen.getByText(/👤:/)
-        expect(messageText.textContent).toContain('...')
-        expect(messageText.textContent?.length).toBeLessThan(longMessage.length + 10)
+        const messageElement = screen.getByText(/👤:/).parentElement
+        expect(messageElement?.textContent).toContain('...')
+        expect(messageElement?.textContent?.length).toBeLessThan(longMessage.length + 10)
       })
     })
   })
@@ -283,12 +283,16 @@ describe('LiveMonitor', () => {
       render(<LiveMonitor />)
 
       await waitFor(() => {
-        const stopButton = screen.getByText('🛑 Emergency Stop')
-        fireEvent.click(stopButton)
+        expect(screen.getByText('🛑 Emergency Stop')).toBeDefined()
       })
 
-      expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
-        type: 'EMERGENCY_STOP'
+      const stopButton = screen.getByText('🛑 Emergency Stop')
+      fireEvent.click(stopButton)
+
+      await waitFor(() => {
+        expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
+          type: 'EMERGENCY_STOP'
+        })
       })
     })
   })

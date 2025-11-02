@@ -174,7 +174,7 @@ describe('GoalConfig', () => {
       for (const goalType of goalTypes) {
         vi.clearAllMocks()
 
-        render(<GoalConfig />)
+        const { unmount } = render(<GoalConfig />)
 
         const select = screen.getByLabelText('Goal Type') as HTMLSelectElement
         fireEvent.change(select, { target: { value: goalType } })
@@ -193,6 +193,9 @@ describe('GoalConfig', () => {
             })
           )
         })
+
+        // Cleanup to prevent multiple elements in DOM
+        unmount()
       }
     })
   })

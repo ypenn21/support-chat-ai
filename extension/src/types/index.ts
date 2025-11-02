@@ -8,7 +8,7 @@ export interface Message {
 }
 
 // Platform types
-export type Platform = 'zendesk' | 'intercom' | 'generic'
+export type Platform = 'zendesk' | 'intercom' | 'coinbase' | 'robinhood' | 'generic'
 
 // User preferences
 export type Tone = 'professional' | 'friendly' | 'empathetic' | 'casual'

@@ -181,15 +181,23 @@ describe('EmergencyStop', () => {
     it('should hide when mode changes to suggestion', async () => {
       vi.mocked(storage.getMode).mockResolvedValue('yolo')
 
-      const { rerender } = render(<EmergencyStop />)
+      // Capture the onModeChange callback
+      let modeChangeCallback: ((mode: 'suggestion' | 'yolo') => void) | null = null
+      vi.mocked(storage.onModeChange).mockImplementation((callback) => {
+        modeChangeCallback = callback
+      })
+
+      render(<EmergencyStop />)
 
       await waitFor(() => {
         expect(screen.getByText('🛑 EMERGENCY STOP')).toBeDefined()
       })
 
-      // Simulate mode change
+      // Simulate mode change by calling the registered callback
       vi.mocked(storage.getMode).mockResolvedValue('suggestion')
-      rerender(<EmergencyStop />)
+      if (modeChangeCallback) {
+        modeChangeCallback('suggestion')
+      }
 
       await waitFor(() => {
         expect(screen.queryByText('🛑 EMERGENCY STOP')).toBeNull()

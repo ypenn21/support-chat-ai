@@ -67,10 +67,9 @@ describe('YoloModeOptions', () => {
     it('should send SET_GOAL message when loading resolve_issue preset', async () => {
       render(<YoloModeOptions />)
 
-      const resolveIssueCard = screen.getByText('Resolve customer shipping delay').closest('div')
-      const loadButton = within(resolveIssueCard as HTMLElement).getByText('Load Preset')
-
-      fireEvent.click(loadButton)
+      // Get all load buttons and click the first one (resolve_issue preset)
+      const loadButtons = screen.getAllByText('Load Preset')
+      fireEvent.click(loadButtons[0])
 
       await waitFor(() => {
         expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
@@ -95,10 +94,9 @@ describe('YoloModeOptions', () => {
     it('should send SET_GOAL message when loading gather_info preset', async () => {
       render(<YoloModeOptions />)
 
-      const gatherInfoCard = screen.getByText('Gather customer information for support ticket').closest('div')
-      const loadButton = within(gatherInfoCard as HTMLElement).getByText('Load Preset')
-
-      fireEvent.click(loadButton)
+      // Get all load buttons and click the second one (gather_info preset)
+      const loadButtons = screen.getAllByText('Load Preset')
+      fireEvent.click(loadButtons[1])
 
       await waitFor(() => {
         expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
@@ -123,10 +121,9 @@ describe('YoloModeOptions', () => {
     it('should send SET_GOAL message when loading escalate preset', async () => {
       render(<YoloModeOptions />)
 
-      const escalateCard = screen.getByText('Gather info and escalate to specialist').closest('div')
-      const loadButton = within(escalateCard as HTMLElement).getByText('Load Preset')
-
-      fireEvent.click(loadButton)
+      // Get all load buttons and click the third one (escalate preset)
+      const loadButtons = screen.getAllByText('Load Preset')
+      fireEvent.click(loadButtons[2])
 
       await waitFor(() => {
         expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({

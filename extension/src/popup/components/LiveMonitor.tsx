@@ -77,7 +77,8 @@ export function LiveMonitor() {
           <div className="max-h-32 overflow-y-auto text-xs space-y-1">
             {conversation.slice(-5).map((msg, i) => (
               <div key={i} className={msg.role === 'customer' ? 'text-blue-700' : 'text-gray-700'}>
-                <strong>{msg.role === 'customer' ? '👤' : '🤖'}:</strong> {msg.content.substring(0, 50)}...
+                <strong>{msg.role === 'customer' ? '👤' : '🤖'}:</strong>{' '}
+                {msg.content.length > 50 ? `${msg.content.substring(0, 50)}...` : msg.content}
               </div>
             ))}
           </div>

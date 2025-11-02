@@ -307,7 +307,10 @@ describe('generateMockAutonomousResponse', () => {
           required_info: ['order_number'],
           max_turns: 10
         },
-        goal_state: baseGoalState,
+        goal_state: {
+          ...baseGoalState,
+          info_gathered: [] // Start with empty info to test gathering
+        },
         safety_constraints: baseConstraints
       }
 
