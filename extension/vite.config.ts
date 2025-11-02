@@ -3,25 +3,12 @@ import react from '@vitejs/plugin-react'
 import { crx } from '@crxjs/vite-plugin'
 import manifest from './public/manifest.json'
 import path from 'path'
-import { copyFileSync, mkdirSync, existsSync } from 'fs'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     react(),
-    crx({ manifest }),
-    // Copy service worker after build
-    {
-      name: 'copy-service-worker',
-      writeBundle() {
-        // Ensure dist directory exists
-        if (!existsSync('dist')) {
-          mkdirSync('dist', { recursive: true })
-        }
-        copyFileSync('public/service-worker.js', 'dist/service-worker.js')
-        console.log('✓ Copied service-worker.js to dist/')
-      }
-    }
+    crx({ manifest })
   ],
   resolve: {
     alias: {

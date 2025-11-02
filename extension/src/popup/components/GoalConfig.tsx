@@ -8,25 +8,36 @@ export function GoalConfig() {
   const [keywords, setKeywords] = useState('angry,manager,complaint')
 
   const handleSave = async () => {
-    const goal: Goal = {
-      type: goalType,
-      description,
-      max_turns: maxTurns
+    try {
+      const goal: Goal = {
+        type: goalType,
+        description,
+        max_turns: maxTurns
+      }
+
+      const constraints: SafetyConstraints = {
+        max_turns: maxTurns,
+        escalation_keywords: keywords.split(',').map(k => k.trim()),
+        stop_if_confused: true,
+        min_confidence: 0.7
+      }
+
+      // Save to storage via background
+      const response = await chrome.runtime.sendMessage({
+        type: 'SET_GOAL',
+        payload: { goal, constraints }
+      })
+
+      if (response?.error) {
+        alert(`Failed to save goal: ${response.error}`)
+        return
+      }
+
+      alert('Goal configured! You can now activate YOLO mode.')
+    } catch (error) {
+      console.error('Failed to save goal:', error)
+      alert('Failed to save goal. Please try again.')
     }
-
-    const constraints: SafetyConstraints = {
-      max_turns: maxTurns,
-      escalation_keywords: keywords.split(',').map(k => k.trim()),
-      stop_if_confused: true
-    }
-
-    // Save to storage via background
-    await chrome.runtime.sendMessage({
-      type: 'SET_GOAL',
-      payload: { goal, constraints }
-    })
-
-    alert('Goal configured! You can now activate YOLO mode.')
   }
 
   return (

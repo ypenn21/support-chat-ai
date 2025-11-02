@@ -6,8 +6,13 @@
   "permissions": [
     "storage",
     "activeTab",
-    "scripting"
+    "scripting",
+    "notifications"
   ],
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
   "host_permissions": [
     "https://*.coinbase.com/*",
     "https://*.robinhood.com/*"
