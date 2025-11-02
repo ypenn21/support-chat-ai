@@ -16,6 +16,29 @@
 
 ## 🔍 Analysis & Investigation
 
+### API Specification
+
+**OpenAPI Specification:**
+- ✅ **Complete OpenAPI 3.0 spec created**: `docs/api-spec.yaml` (919 lines)
+- ✅ **All endpoints defined**: health, suggest-response, autonomous-response, feedback, conversation-logs
+- ✅ **Request/Response models**: Full Pydantic-compatible schema definitions
+- ✅ **Examples included**: Request/response examples for all endpoints
+- ✅ **Error responses**: 400, 401, 429, 500, 503 error schemas
+- ✅ **Security definitions**: API key authentication via X-API-Key header
+
+**Key Endpoints from Spec:**
+1. `GET /health` - Health check (no auth)
+2. `POST /api/suggest-response` - Suggestion Mode (SuggestRequest → SuggestResponse)
+3. `POST /api/autonomous-response` - YOLO Mode (AutonomousRequest → AutonomousResponse)
+4. `POST /api/feedback` - Feedback submission (FeedbackRequest → success)
+5. `GET /api/conversation-logs` - Retrieve logs (query params → ConversationLogMetadata[])
+6. `POST /api/conversation-logs` - Save logs (ConversationLogCreate → success)
+
+**Schema Reference:**
+All implementation must match schemas defined in `docs/api-spec.yaml`:
+- Request models: Message, UserPreferences, SuggestRequest, Goal, GoalState, SafetyConstraints, AutonomousRequest, FeedbackRequest, ConversationLogCreate
+- Response models: Suggestion, Metadata, SuggestResponse, AutonomousResponse, ConversationLogMetadata, Error
+
 ### Codebase Structure
 
 **Backend Status:**
@@ -24,6 +47,7 @@ The FastAPI backend skeleton exists at `/backend` with the following structure:
 - ✅ Pydantic models created (`request.py`, `response.py`)
 - ✅ Configuration management with `pydantic-settings`
 - ✅ Main FastAPI app initialized with CORS and health check
+- ✅ **OpenAPI specification complete** (`docs/api-spec.yaml`)
 - ❌ **API routes NOT implemented** (only TODO comments exist)
 - ❌ **Services NOT implemented** (directories empty)
 - ❌ **Vertex AI integration NOT implemented**
@@ -44,6 +68,7 @@ The FastAPI backend skeleton exists at `/backend` with the following structure:
 5. `/backend/requirements.txt` - Dependencies including Vertex AI SDK
 6. `/extension/src/background/api-client.ts` - Extension API client (currently using mock)
 7. `/extension/src/lib/mock-api.ts` - Mock API implementation to be replaced
+8. **`/docs/api-spec.yaml`** - Complete OpenAPI 3.0 specification
 
 ### Current Architecture
 
@@ -53,6 +78,7 @@ The FastAPI backend skeleton exists at `/backend` with the following structure:
 - **Validation**: Pydantic 2.5.0
 - **GCP Services**: Vertex AI, Secret Manager, Firestore, Cloud Logging
 - **Extension**: TypeScript, Chrome Manifest V3
+- **API Documentation**: OpenAPI 3.0.3
 
 **Backend Structure:**
 ```
@@ -62,7 +88,7 @@ backend/app/
 │   ├── suggest.py            # TO CREATE: POST /api/suggest-response
 │   ├── autonomous.py         # TO CREATE: POST /api/autonomous-response
 │   ├── feedback.py           # TO CREATE: POST /api/feedback
-│   └── logs.py               # TO CREATE: GET /api/conversation-logs
+│   └── logs.py               # TO CREATE: GET/POST /api/conversation-logs
 ├── services/                 # Business logic (❌ empty)
 │   ├── gemini.py             # TO CREATE: Vertex AI integration
 │   ├── prompt_builder.py     # TO CREATE: Prompt engineering
@@ -75,6 +101,12 @@ backend/app/
     ├── config.py             # Settings management
     ├── security.py           # TO CREATE: Auth & rate limiting
     └── database.py           # TO CREATE: Firestore client
+```
+
+**Documentation Structure:**
+```
+docs/
+└── api-spec.yaml             # ✅ OpenAPI 3.0 specification (919 lines)
 ```
 
 ### Dependencies & Integration Points
@@ -98,7 +130,7 @@ Cloud Run Backend (FastAPI)
 Vertex AI Gemini 1.5 Pro/Flash
     ↓ response
 Cloud Run Backend
-    ↓ JSON response
+    ↓ JSON response (per OpenAPI spec)
 Extension (displays suggestion)
 ```
 
@@ -143,7 +175,7 @@ DEBUG=false
 
 **3. Rate Limiting**
 - **Challenge**: Prevent abuse from extension
-- **Solution**: Implement per-IP or per-API-key rate limiting
+- **Solution**: Implement per-IP or per-API-key rate limiting (60/min per OpenAPI spec)
 - **Library**: Use `slowapi` or custom middleware
 
 **4. Cost Optimization**
@@ -170,10 +202,18 @@ DEBUG=false
 **7. YOLO Mode Safety**
 - **Challenge**: Autonomous responses require safety checks
 - **Solution**:
-  - Implement confidence threshold checks (min 0.7)
+  - Implement confidence threshold checks (min 0.7 per OpenAPI spec)
   - Keyword-based escalation detection
   - Maximum conversation turn limits
   - All safety logic in backend for consistency
+
+**8. OpenAPI Compliance**
+- **Challenge**: Ensure implementation exactly matches OpenAPI specification
+- **Solution**:
+  - Use `docs/api-spec.yaml` as source of truth for all endpoints
+  - Validate request/response schemas against spec
+  - Use FastAPI's automatic OpenAPI generation and compare with spec
+  - Test all endpoints against spec examples
 
 ## 📝 Implementation Plan
 
@@ -227,44 +267,48 @@ DEBUG=false
 
 **Step 1: Implement Vertex AI Gemini Service**
 - Files to create: `backend/app/services/gemini.py`
+- **Reference**: OpenAPI spec `docs/api-spec.yaml` - see Metadata schema for model_used field
 - Changes needed:
   ```python
   # Initialize Vertex AI client
   # Implement generate_suggestion(prompt: str) -> str
   # Implement generate_autonomous_response(prompt: str, goal: dict) -> dict
   # Handle retries and error cases
-  # Support both Gemini 1.5 Pro and Flash models
+  # Support both Gemini 1.5 Pro and Flash models (per OpenAPI spec)
   ```
 - Key functions:
   - `initialize_vertex_ai()` - Set up Vertex AI client
   - `generate_text_async(prompt: str, model: str)` - Call Gemini API
-  - `calculate_confidence(response: str)` - Heuristic confidence score
-  - `handle_vertex_ai_error(error: Exception)` - Error handling
+  - `calculate_confidence(response: str)` - Heuristic confidence score (0.0-1.0 per OpenAPI spec)
+  - `handle_vertex_ai_error(error: Exception)` - Error handling (return 503 per OpenAPI spec)
 
 **Step 2: Implement Prompt Builder Service**
 - Files to create: `backend/app/services/prompt_builder.py`
+- **Reference**: OpenAPI spec UserPreferences schema (tone, length, language, always_include_greeting)
 - Changes needed:
   ```python
   # Build prompts for Suggestion Mode
   # Build prompts for YOLO Mode with goals
   # Include conversation context
-  # Apply user preferences (tone, length)
+  # Apply user preferences (tone, length) from UserPreferences schema
   # Add system instructions for safety
   ```
 - Key functions:
   - `build_suggestion_prompt(context: List[Message], prefs: UserPreferences)` - Suggestion Mode
   - `build_autonomous_prompt(context: List[Message], goal: Goal, state: GoalState)` - YOLO Mode
-  - `format_conversation(messages: List[Message])` - Format messages
-  - `apply_tone(prompt: str, tone: str)` - Apply tone preferences
+  - `format_conversation(messages: List[Message])` - Format messages per Message schema
+  - `apply_tone(prompt: str, tone: str)` - Apply tone preferences (professional/casual/friendly/empathetic)
 
 **Step 3: Implement Context Processor Service**
 - Files to create: `backend/app/services/context_processor.py`
+- **Reference**: OpenAPI spec Message schema (role, content, timestamp validation)
 - Changes needed:
   ```python
   # Validate conversation context
   # Clean and sanitize messages
   # Detect conversation intent
   # Extract key entities (order numbers, emails)
+  # Enforce minItems: 1, maxItems: 50 from OpenAPI spec
   ```
 - Key functions:
   - `process_context(messages: List[Message])` - Validate and clean
@@ -275,86 +319,91 @@ DEBUG=false
 
 **Step 4: Create Suggestion Mode API Endpoint**
 - Files to create: `backend/app/api/routes/suggest.py`
+- **Reference**: OpenAPI spec `/api/suggest-response` endpoint definition
+- **Must match**: SuggestRequest schema (input), SuggestResponse schema (output)
 - Changes needed:
   ```python
   @router.post("/api/suggest-response", response_model=SuggestResponse)
   async def suggest_response(request: SuggestRequest):
-      # 1. Validate request
+      # 1. Validate request (Pydantic auto-validates against SuggestRequest schema)
       # 2. Process conversation context
       # 3. Build prompt with user preferences
-      # 4. Call Vertex AI Gemini
-      # 5. Generate suggestion with confidence score
-      # 6. Return SuggestResponse with metadata
+      # 4. Call Vertex AI Gemini (use gemini-1.5-flash per OpenAPI examples)
+      # 5. Generate suggestion with confidence score (0.0-1.0)
+      # 6. Return SuggestResponse with metadata (request_id, processing_time_ms, model_used, timestamp)
   ```
-- Error handling: 400 (bad request), 500 (internal error), 503 (Vertex AI unavailable)
-- Response time target: <2 seconds
+- Error handling per OpenAPI spec:
+  - 400 (bad request - validation error)
+  - 401 (missing/invalid API key)
+  - 429 (rate limit exceeded - 60/min)
+  - 500 (internal error)
+  - 503 (Vertex AI unavailable)
+- Response time target: <2 seconds (per OpenAPI description)
 
 **Step 5: Create Autonomous Mode API Endpoint**
 - Files to create: `backend/app/api/routes/autonomous.py`
+- **Reference**: OpenAPI spec `/api/autonomous-response` endpoint definition
+- **Must match**: AutonomousRequest schema (input), AutonomousResponse schema (output)
 - Changes needed:
   ```python
   @router.post("/api/autonomous-response", response_model=AutonomousResponse)
   async def autonomous_response(request: AutonomousRequest):
-      # 1. Validate request and goal state
-      # 2. Check safety constraints
+      # 1. Validate request and goal state (auto-validated by Pydantic)
+      # 2. Check safety constraints (SafetyConstraints schema: max_turns, escalation_keywords, min_confidence)
       # 3. Build goal-oriented prompt
-      # 4. Call Vertex AI Gemini
-      # 5. Determine action (respond/escalate/goal_complete)
-      # 6. Update goal state
-      # 7. Return AutonomousResponse with action and updated state
+      # 4. Call Vertex AI Gemini (use gemini-1.5-pro per OpenAPI examples)
+      # 5. Determine action: "respond" | "escalate" | "goal_complete" (per OpenAPI enum)
+      # 6. Update goal state (GoalState schema: active, current_turn, progress)
+      # 7. Return AutonomousResponse with action, response_text (nullable), updated_state, reasoning, confidence, metadata
   ```
-- Additional models needed:
-  ```python
-  # In models/request.py
-  class Goal(BaseModel):
-      type: Literal["resolve_issue", "gather_info", "escalate", "custom"]
-      description: str
-      max_turns: int = 10
-
-  class AutonomousRequest(BaseModel):
-      platform: str
-      conversation_context: List[Message]
-      goal: Goal
-      goal_state: GoalState
-      safety_constraints: SafetyConstraints
-  ```
+- **Safety checks per OpenAPI spec**:
+  - Enforce max_turns (1-20)
+  - Check escalation_keywords array
+  - Respect min_confidence threshold (0.0-1.0, default 0.7)
+  - stop_if_confused flag
 
 **Step 6: Create Feedback API Endpoint**
 - Files to create: `backend/app/api/routes/feedback.py`
+- **Reference**: OpenAPI spec `/api/feedback` endpoint definition
+- **Must match**: FeedbackRequest schema (input), success response
 - Changes needed:
   ```python
   @router.post("/api/feedback")
   async def submit_feedback(feedback: FeedbackRequest):
-      # 1. Validate feedback
+      # 1. Validate feedback (FeedbackRequest schema: suggestion_id, rating: "helpful"|"not_helpful", optional comment)
       # 2. Store in Firestore with timestamp
-      # 3. Return success response
+      # 3. Return success response: {status: "success", message: "Feedback recorded", feedback_id: "fb_..."}
 
-  # New model in models/request.py
-  class FeedbackRequest(BaseModel):
-      suggestion_id: str
-      rating: Literal["helpful", "not_helpful"]
-      comment: Optional[str] = None
+  # Model already defined in OpenAPI spec - ensure Pydantic model matches
   ```
 
 **Step 7: Create Conversation Logs API Endpoint**
 - Files to create: `backend/app/api/routes/logs.py`
+- **Reference**: OpenAPI spec `/api/conversation-logs` GET and POST endpoints
+- **Must match**: ConversationLogCreate (POST input), ConversationLogMetadata (GET output)
 - Changes needed:
   ```python
   @router.get("/api/conversation-logs")
-  async def get_logs(limit: int = 50):
-      # 1. Query Firestore for recent logs
-      # 2. Filter sensitive data
-      # 3. Return logs with metadata only
+  async def get_logs(
+      limit: int = Query(50, ge=1, le=100),  # Per OpenAPI spec: min 1, max 100, default 50
+      platform: Optional[str] = Query(None, enum=["zendesk", "intercom", "coinbase", "robinhood"]),
+      start_date: Optional[int] = None
+  ):
+      # 1. Query Firestore for recent logs with filters
+      # 2. Filter sensitive data (privacy: no customer message content)
+      # 3. Return response: {logs: ConversationLogMetadata[], total: int, page: int}
 
-  @router.post("/api/conversation-logs")
-  async def save_log(log: ConversationLog):
-      # 1. Validate log
-      # 2. Remove customer message content (privacy)
+  @router.post("/api/conversation-logs", status_code=201)
+  async def save_log(log: ConversationLogCreate):
+      # 1. Validate log (ConversationLogCreate schema: platform, mode, timestamp required)
+      # 2. Remove customer message content (privacy requirement from OpenAPI spec)
       # 3. Save metadata only to Firestore
+      # 4. Return: {status: "success", log_id: "log_..."}
   ```
 
 **Step 8: Register Routes in Main App**
 - Files to modify: `backend/app/main.py`
+- **Reference**: OpenAPI spec tags: suggestions, autonomous, feedback, logs, health
 - Changes needed:
   ```python
   from app.api.routes import suggest, autonomous, feedback, logs
@@ -363,16 +412,21 @@ DEBUG=false
   app.include_router(autonomous.router, prefix="/api", tags=["autonomous"])
   app.include_router(feedback.router, prefix="/api", tags=["feedback"])
   app.include_router(logs.router, prefix="/api", tags=["logs"])
+
+  # Ensure FastAPI generates OpenAPI spec at /openapi.json
+  # Compare generated spec with docs/api-spec.yaml for consistency
   ```
 
 #### **Phase 3: Security & Infrastructure (1-2 hours)**
 
 **Step 9: Implement Authentication Middleware**
 - Files to create: `backend/app/core/security.py`
+- **Reference**: OpenAPI spec securitySchemes.ApiKeyAuth (header: X-API-Key)
 - Changes needed:
   ```python
-  # API key validation
-  # JWT token support (optional)
+  # API key validation per OpenAPI spec
+  # Header name MUST be "X-API-Key"
+  # Return 401 for missing/invalid key (per OpenAPI error responses)
   # Rate limiting per API key
   # CORS configuration for extension
   ```
@@ -381,16 +435,20 @@ DEBUG=false
   from fastapi import Security, HTTPException
   from fastapi.security import APIKeyHeader
 
-  api_key_header = APIKeyHeader(name="X-API-Key")
+  api_key_header = APIKeyHeader(name="X-API-Key")  # Per OpenAPI spec
 
   async def verify_api_key(api_key: str = Security(api_key_header)):
       if not is_valid_api_key(api_key):
-          raise HTTPException(status_code=403, detail="Invalid API key")
+          raise HTTPException(
+              status_code=401,  # Per OpenAPI spec
+              detail="Invalid or missing API key"
+          )
       return api_key
   ```
 
 **Step 10: Implement Rate Limiting**
 - Files to modify: `backend/app/main.py`, create `backend/app/middleware/rate_limit.py`
+- **Reference**: OpenAPI spec info.description (rate limiting: 60 requests/minute)
 - Changes needed:
   ```python
   from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -400,15 +458,18 @@ DEBUG=false
   app.state.limiter = limiter
   app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-  # Apply to routes
+  # Apply to routes (60/minute per OpenAPI spec)
   @limiter.limit("60/minute")
   @router.post("/api/suggest-response")
   async def suggest_response(...):
       ...
+
+  # Return 429 error with retry_after field (per OpenAPI Error schema)
   ```
 
 **Step 11: Implement Firestore Integration**
 - Files to create: `backend/app/core/database.py`
+- **Reference**: OpenAPI spec ConversationLogCreate and ConversationLogMetadata schemas
 - Changes needed:
   ```python
   from google.cloud import firestore
@@ -417,8 +478,10 @@ DEBUG=false
 
   async def save_conversation_log(log: dict):
       # Save to Firestore with auto-generated ID
+      # Store only metadata (no customer message content per OpenAPI privacy note)
       doc_ref = db.collection('conversation_logs').document()
       doc_ref.set(log)
+      return doc_ref.id
 
   async def get_analytics():
       # Query Firestore for metrics
@@ -430,29 +493,33 @@ DEBUG=false
 
 **Step 12: Replace Mock API with Real API Client**
 - Files to modify: `extension/src/background/api-client.ts`
+- **Reference**: OpenAPI spec endpoints and request/response schemas
 - Changes needed:
   ```typescript
   // Add environment variable for API URL
   const API_URL = import.meta.env.VITE_API_URL || 'https://your-cloud-run-url'
   const API_KEY = import.meta.env.VITE_API_KEY
 
+  // Implement per OpenAPI spec: POST /api/suggest-response
   export async function fetchSuggestion(request: SuggestRequest): Promise<SuggestResponse> {
     const response = await fetch(`${API_URL}/api/suggest-response`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-API-Key': API_KEY
+        'X-API-Key': API_KEY  // Per OpenAPI securitySchemes
       },
       body: JSON.stringify(request)
     })
 
     if (!response.ok) {
+      // Handle errors per OpenAPI spec: 400, 401, 429, 500, 503
       throw new APIError(`API error: ${response.status}`)
     }
 
-    return await response.json()
+    return await response.json()  // Returns SuggestResponse schema
   }
 
+  // Implement per OpenAPI spec: POST /api/autonomous-response
   export async function fetchAutonomousResponse(request: AutonomousRequest): Promise<AutonomousResponse> {
     const response = await fetch(`${API_URL}/api/autonomous-response`, {
       method: 'POST',
@@ -467,16 +534,17 @@ DEBUG=false
       throw new APIError(`API error: ${response.status}`)
     }
 
-    return await response.json()
+    return await response.json()  // Returns AutonomousResponse schema
   }
   ```
 
 **Step 13: Add Environment Configuration**
 - Files to create: `extension/.env.example`, modify `extension/vite.config.ts`
+- **Reference**: OpenAPI spec servers (production and local dev URLs)
 - Changes needed:
   ```bash
   # .env.example
-  VITE_API_URL=http://localhost:8080
+  VITE_API_URL=http://localhost:8080  # Local dev per OpenAPI spec
   VITE_API_KEY=your-dev-api-key
   ```
   ```typescript
@@ -500,7 +568,7 @@ DEBUG=false
       return await fetchSuggestion(request)
     } catch (error) {
       console.warn('Backend unavailable, using mock API', error)
-      // Fall back to mock
+      // Fall back to mock (generates response matching SuggestResponse schema)
       return await generateMockSuggestion(request)
     }
   }
@@ -539,7 +607,7 @@ DEBUG=false
   gcloud auth configure-docker us-central1-docker.pkg.dev
   docker push us-central1-docker.pkg.dev/$PROJECT_ID/support-chat-ai/backend:v1.0.0
 
-  # Deploy to Cloud Run
+  # Deploy to Cloud Run (production URL per OpenAPI spec servers)
   gcloud run deploy support-chat-ai \
     --image=us-central1-docker.pkg.dev/$PROJECT_ID/support-chat-ai/backend:v1.0.0 \
     --region=us-central1 \
@@ -551,7 +619,7 @@ DEBUG=false
     --memory=1Gi \
     --cpu=1
 
-  # Get deployed URL
+  # Get deployed URL (update OpenAPI spec servers with actual URL)
   gcloud run services describe support-chat-ai \
     --region=us-central1 \
     --format='value(status.url)'
@@ -577,25 +645,27 @@ DEBUG=false
 
 **Step 18: Update Extension with Production URL**
 - Files to modify: `extension/.env.production`
+- **Reference**: OpenAPI spec servers.url (production)
 - Changes needed:
   ```bash
-  VITE_API_URL=https://support-chat-ai-XXXXX-uc.a.run.app
+  VITE_API_URL=https://support-chat-ai-XXXXX-uc.a.run.app  # Actual Cloud Run URL
   VITE_API_KEY=your-production-api-key
   ```
 
 #### **Phase 6: Testing & Validation (2-3 hours)**
 
 **Step 19: Test Backend Endpoints Locally**
+- **Reference**: Use example requests from OpenAPI spec for testing
 - Terminal commands:
   ```bash
   # Start local server
   cd backend
   uvicorn app.main:app --reload --port 8080
 
-  # Test health check
+  # Test health check (per OpenAPI spec /health endpoint)
   curl http://localhost:8080/health
 
-  # Test suggestion endpoint
+  # Test suggestion endpoint (use example from OpenAPI spec)
   curl -X POST http://localhost:8080/api/suggest-response \
     -H "Content-Type: application/json" \
     -H "X-API-Key: test-key" \
@@ -609,10 +679,13 @@ DEBUG=false
         }
       ]
     }'
+
+  # Verify response matches SuggestResponse schema from OpenAPI spec
   ```
 
 **Step 20: Write Backend Tests**
 - Files to create: `backend/tests/test_suggest.py`, `backend/tests/test_autonomous.py`
+- **Reference**: Use OpenAPI spec examples as test cases
 - Changes needed:
   ```python
   import pytest
@@ -622,37 +695,104 @@ DEBUG=false
   client = TestClient(app)
 
   def test_suggest_response():
+      # Use example from OpenAPI spec: /api/suggest-response > examples > basic
       response = client.post("/api/suggest-response", json={
           "platform": "zendesk",
           "conversation_context": [{
               "role": "customer",
-              "content": "Test",
-              "timestamp": 1234567890
-          }]
+              "content": "My order #12345 hasn't arrived yet. It's been 2 weeks!",
+              "timestamp": 1704067200
+          }],
+          "user_preferences": {
+              "tone": "professional",
+              "length": "medium",
+              "language": "en",
+              "always_include_greeting": True
+          }
       })
       assert response.status_code == 200
       data = response.json()
+      # Validate against SuggestResponse schema
       assert "suggestions" in data
-      assert len(data["suggestions"]) > 0
+      assert len(data["suggestions"]) >= 1
+      assert "metadata" in data
+      assert data["metadata"]["model_used"] in ["gemini-1.5-pro", "gemini-1.5-flash"]
+
+  def test_autonomous_response():
+      # Use example from OpenAPI spec: /api/autonomous-response > examples > resolve_issue
+      response = client.post("/api/autonomous-response", json={
+          "platform": "zendesk",
+          "conversation_context": [{
+              "role": "customer",
+              "content": "My order is late",
+              "timestamp": 1704067200
+          }],
+          "goal": {
+              "type": "resolve_issue",
+              "description": "Resolve shipping delay complaint",
+              "max_turns": 5
+          },
+          "goal_state": {
+              "active": True,
+              "current_turn": 1,
+              "progress": 0.2
+          },
+          "safety_constraints": {
+              "max_turns": 5,
+              "escalation_keywords": ["angry", "manager", "complaint", "refund"],
+              "stop_if_confused": True,
+              "min_confidence": 0.7
+          }
+      })
+      assert response.status_code == 200
+      data = response.json()
+      # Validate against AutonomousResponse schema
+      assert data["action"] in ["respond", "escalate", "goal_complete"]
+      assert "updated_state" in data
+      assert "confidence" in data
+      assert 0.0 <= data["confidence"] <= 1.0
   ```
 
-**Step 21: End-to-End Testing**
+**Step 21: Validate Against OpenAPI Spec**
+- **New step**: Ensure implementation matches OpenAPI specification exactly
+- Tools and commands:
+  ```bash
+  # Install OpenAPI validator
+  npm install -g @stoplight/spectral-cli
+
+  # Validate spec itself
+  spectral lint docs/api-spec.yaml
+
+  # Test backend generates matching OpenAPI spec
+  # 1. Start backend server
+  uvicorn app.main:app --reload --port 8080
+
+  # 2. Fetch generated OpenAPI spec
+  curl http://localhost:8080/openapi.json > /tmp/generated-openapi.json
+
+  # 3. Compare with docs/api-spec.yaml
+  # Ensure schemas match (request/response models)
+  # Ensure endpoints match (paths, methods, parameters)
+  ```
+
+**Step 22: End-to-End Testing**
 - Steps:
   1. Load extension in Chrome with production API URL
-  2. Navigate to Zendesk/Intercom chat page
+  2. Navigate to Coinbase/Robinhood chat page
   3. Test Suggestion Mode with real AI responses
   4. Test YOLO Mode with autonomous responses
   5. Verify emergency stop works
-  6. Test with invalid API key (should fall back to mock)
-  7. Monitor Cloud Run logs for errors
+  6. Test with invalid API key (should return 401 per OpenAPI spec)
+  7. Test rate limiting (should return 429 after 60 requests/min per OpenAPI spec)
+  8. Monitor Cloud Run logs for errors
 
-**Step 22: Performance Testing**
+**Step 23: Performance Testing**
 - Terminal commands:
   ```bash
   # Install Apache Bench
   # macOS: brew install apache2
 
-  # Test suggestion endpoint
+  # Test suggestion endpoint (target: <2 seconds per OpenAPI description)
   ab -n 100 -c 10 -T 'application/json' \
     -H "X-API-Key: test-key" \
     -p request.json \
@@ -681,7 +821,12 @@ DEBUG=false
 - Test API endpoints end-to-end
 - Use test Vertex AI model
 - Test with various conversation contexts
-- Verify response format and validation
+- Verify response format matches OpenAPI schemas
+
+**Schema Validation Tests:**
+- Validate all request payloads against OpenAPI spec schemas
+- Validate all response payloads against OpenAPI spec schemas
+- Test error responses match OpenAPI error schema (400, 401, 429, 500, 503)
 
 **E2E Tests (Extension + Backend):**
 - Load extension in test browser
@@ -692,49 +837,53 @@ DEBUG=false
 - Test error scenarios (API down, rate limit)
 
 **Performance Tests:**
-- Measure P50, P95, P99 latency
+- Measure P50, P95, P99 latency (target: P95 < 2s per OpenAPI spec)
 - Test with concurrent requests
 - Verify Cloud Run auto-scaling
 - Monitor Vertex AI quota usage
 
 **Manual Testing Checklist:**
-- [ ] Health check returns 200
-- [ ] Suggestion endpoint returns valid response
-- [ ] Autonomous endpoint returns valid action
-- [ ] Invalid API key returns 403
-- [ ] Rate limit triggers after 60 requests/minute
+- [ ] Health check returns 200 with correct schema
+- [ ] Suggestion endpoint returns valid SuggestResponse
+- [ ] Autonomous endpoint returns valid AutonomousResponse
+- [ ] Invalid API key returns 401 (per OpenAPI spec)
+- [ ] Missing API key returns 401 (per OpenAPI spec)
+- [ ] Rate limit triggers after 60 requests/minute (returns 429 per OpenAPI spec)
 - [ ] Extension displays real AI suggestions
 - [ ] YOLO mode works end-to-end
 - [ ] Emergency stop halts YOLO mode
-- [ ] Conversation logs saved to Firestore
-- [ ] No customer data stored permanently
+- [ ] Conversation logs saved to Firestore (metadata only)
+- [ ] No customer data stored permanently (privacy per OpenAPI spec)
+- [ ] All responses include required metadata fields (request_id, processing_time_ms, model_used, timestamp)
 
 ## 🎯 Success Criteria
 
 **Backend:**
 - ✅ All API endpoints return 2xx responses
+- ✅ All endpoints match OpenAPI spec exactly (paths, methods, schemas)
 - ✅ Vertex AI successfully generates suggestions
 - ✅ Response latency P95 < 2 seconds
-- ✅ Rate limiting prevents abuse (60 req/min)
-- ✅ No customer data stored (only metadata)
+- ✅ Rate limiting prevents abuse (60 req/min per OpenAPI spec)
+- ✅ No customer data stored (only metadata per OpenAPI privacy notes)
 - ✅ Deployed to Cloud Run with auto-scaling
 - ✅ Logs visible in Cloud Logging
 - ✅ Tests passing with 80%+ coverage
+- ✅ Generated OpenAPI spec matches docs/api-spec.yaml
 
 **Extension Integration:**
 - ✅ Extension successfully calls backend API
 - ✅ Real AI suggestions displayed in UI
 - ✅ Fallback to mock API when backend unavailable
-- ✅ API key securely stored and transmitted
+- ✅ API key securely stored and transmitted (X-API-Key header per OpenAPI spec)
 - ✅ Error handling for network failures
 - ✅ YOLO mode works with real AI decisions
 
 **Security:**
-- ✅ API key authentication required
+- ✅ API key authentication required (X-API-Key header per OpenAPI spec)
 - ✅ CORS restricted to extension origin
 - ✅ No secrets in code or logs
-- ✅ Rate limiting prevents DoS
-- ✅ Input validation on all endpoints
+- ✅ Rate limiting prevents DoS (60/min per OpenAPI spec)
+- ✅ Input validation on all endpoints (Pydantic + OpenAPI schemas)
 
 **Deployment:**
 - ✅ Cloud Run service deployed and running
@@ -744,22 +893,31 @@ DEBUG=false
 - ✅ Monitoring and alerting enabled
 
 **Documentation:**
-- ✅ API endpoints documented (Swagger/OpenAPI)
+- ✅ API endpoints documented in OpenAPI 3.0 spec (docs/api-spec.yaml)
+- ✅ All request/response schemas defined
+- ✅ Examples provided for all endpoints
 - ✅ Deployment instructions in README
 - ✅ Environment variable guide
 - ✅ Troubleshooting guide
 
 ## 📚 Additional Notes
 
+**OpenAPI Specification Usage:**
+- **Source of Truth**: `docs/api-spec.yaml` is the authoritative specification for all API endpoints
+- **Implementation Guide**: Use OpenAPI schemas to guide Pydantic model creation
+- **Testing Reference**: Use OpenAPI examples as test cases
+- **Client Generation**: Can generate TypeScript client code from spec using openapi-generator
+- **Validation**: FastAPI automatically generates OpenAPI spec - compare with docs/api-spec.yaml for consistency
+
 **Cost Optimization:**
-- Use Gemini 1.5 Flash for Suggestion Mode (10x cheaper than Pro)
-- Use Gemini 1.5 Pro only for YOLO Mode (higher accuracy needed)
+- Use Gemini 1.5 Flash for Suggestion Mode (10x cheaper than Pro, per OpenAPI metadata.model_used)
+- Use Gemini 1.5 Pro only for YOLO Mode (higher accuracy needed, per OpenAPI metadata.model_used)
 - Implement response caching for identical requests (5-minute TTL)
 - Set Cloud Run min instances=1 to avoid cold starts but limit max=10
 
 **Monitoring:**
 - Set up Cloud Monitoring alerts for:
-  - Response latency > 3 seconds
+  - Response latency > 3 seconds (target <2s per OpenAPI spec)
   - Error rate > 5%
   - CPU usage > 80%
   - Request rate spike (DDoS detection)
@@ -771,3 +929,4 @@ DEBUG=false
 - Add conversation analytics dashboard
 - Support for more Gemini models (Gemini Ultra)
 - Implement feedback loop for model fine-tuning
+- Generate TypeScript API client from OpenAPI spec for extension

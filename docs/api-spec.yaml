@@ -1,0 +1,919 @@
+openapi: 3.0.3
+info:
+  title: Support Chat AI Assistant API
+  description: |
+    Backend REST API for the Support Chat AI Assistant Chrome Extension.
+
+    This API provides AI-powered response generation for customer support agents operating in two modes:
+    - **Suggestion Mode**: AI generates suggestions that agents manually review and send
+    - **YOLO Mode**: AI autonomously responds to customers based on configurable goals
+
+    **Technology Stack:**
+    - Backend: FastAPI + Python 3.11
+    - AI: Google Vertex AI Gemini 1.5 Pro/Flash
+    - Deployment: Google Cloud Run
+
+    **Security:**
+    - All endpoints require API key authentication via `X-API-Key` header
+    - Rate limiting: 60 requests per minute per API key
+    - CORS enabled for Chrome extension origins only
+  version: 1.0.0
+  contact:
+    name: Support Chat AI Team
+    email: support@example.com
+  license:
+    name: MIT
+
+servers:
+  - url: https://support-chat-ai-xxxxx-uc.a.run.app
+    description: Production (Google Cloud Run)
+  - url: http://localhost:8080
+    description: Local Development
+
+tags:
+  - name: suggestions
+    description: Suggestion Mode endpoints (human-in-the-loop)
+  - name: autonomous
+    description: YOLO Mode endpoints (autonomous agent)
+  - name: feedback
+    description: User feedback collection
+  - name: logs
+    description: Conversation logging and analytics
+  - name: health
+    description: Service health and monitoring
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+  /health:
+    get:
+      tags:
+        - health
+      summary: Health check endpoint
+      description: Returns service health status and version information
+      security: []  # No authentication required
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  timestamp:
+                    type: integer
+                    example: 1704067200
+
+  /api/suggest-response:
+    post:
+      tags:
+        - suggestions
+      summary: Generate AI response suggestion (Suggestion Mode)
+      description: |
+        Generates AI-powered response suggestions based on conversation context and user preferences.
+        Used in Suggestion Mode where human agents review and manually send responses.
+
+        **Flow:**
+        1. Extension sends conversation context and preferences
+        2. Backend processes context and builds prompt
+        3. Vertex AI Gemini generates suggestion
+        4. Backend returns suggestion with confidence score
+        5. Agent reviews, edits, and manually sends
+      operationId: suggestResponse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SuggestRequest'
+            examples:
+              basic:
+                summary: Basic suggestion request
+                value:
+                  platform: "zendesk"
+                  conversation_context:
+                    - role: "customer"
+                      content: "My order #12345 hasn't arrived yet. It's been 2 weeks!"
+                      timestamp: 1704067200
+                  user_preferences:
+                    tone: "professional"
+                    length: "medium"
+                    language: "en"
+                    always_include_greeting: true
+              with_history:
+                summary: Request with conversation history
+                value:
+                  platform: "intercom"
+                  conversation_context:
+                    - role: "customer"
+                      content: "I need help with my account"
+                      timestamp: 1704067100
+                    - role: "agent"
+                      content: "I'd be happy to help! Can you describe the issue?"
+                      timestamp: 1704067150
+                    - role: "customer"
+                      content: "I can't log in anymore"
+                      timestamp: 1704067200
+                  user_preferences:
+                    tone: "casual"
+                    length: "short"
+                    language: "en"
+      responses:
+        '200':
+          description: Successfully generated suggestion
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuggestResponse'
+              examples:
+                success:
+                  summary: Successful suggestion response
+                  value:
+                    suggestions:
+                      - text: "I apologize for the delay with your order #12345. Let me check the shipping status for you right away. Can you confirm the delivery address you have on file?"
+                        confidence: 0.85
+                        reasoning: "Customer is frustrated about late delivery. Empathy + action + verification question."
+                    metadata:
+                      request_id: "req_abc123xyz"
+                      processing_time_ms: 1250
+                      model_used: "gemini-1.5-flash"
+                      timestamp: 1704067210
+        '400':
+          description: Invalid request (validation error)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Validation Error"
+                message: "conversation_context must contain at least 1 message"
+                details:
+                  field: "conversation_context"
+                  constraint: "min_length"
+        '401':
+          description: Missing or invalid API key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "Invalid or missing API key"
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Rate Limit Exceeded"
+                message: "Maximum 60 requests per minute allowed"
+                retry_after: 45
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: Vertex AI service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/autonomous-response:
+    post:
+      tags:
+        - autonomous
+      summary: Generate autonomous AI response (YOLO Mode)
+      description: |
+        Generates AI decision and response for autonomous mode where AI automatically responds to customers.
+
+        **Flow:**
+        1. Extension sends conversation context, goal, and safety constraints
+        2. Backend evaluates goal progress and safety checks
+        3. Vertex AI Gemini decides action (respond/escalate/goal_complete)
+        4. Backend returns action, response, and updated goal state
+        5. Extension auto-sends response or escalates to human
+
+        **Safety Features:**
+        - Turn limit enforcement
+        - Escalation keyword detection
+        - Confidence threshold checks
+        - Goal completion detection
+      operationId: autonomousResponse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutonomousRequest'
+            examples:
+              resolve_issue:
+                summary: Resolve shipping issue goal
+                value:
+                  platform: "zendesk"
+                  conversation_context:
+                    - role: "customer"
+                      content: "My order is late"
+                      timestamp: 1704067200
+                  goal:
+                    type: "resolve_issue"
+                    description: "Resolve shipping delay complaint"
+                    max_turns: 5
+                  goal_state:
+                    active: true
+                    current_turn: 1
+                    progress: 0.2
+                  safety_constraints:
+                    max_turns: 5
+                    escalation_keywords: ["angry", "manager", "complaint", "refund"]
+                    stop_if_confused: true
+                    min_confidence: 0.7
+      responses:
+        '200':
+          description: Successfully generated autonomous response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutonomousResponse'
+              examples:
+                respond:
+                  summary: AI decides to respond
+                  value:
+                    action: "respond"
+                    response_text: "I apologize for the delay. Let me check your order status. Can you provide your order number?"
+                    updated_state:
+                      active: true
+                      current_turn: 2
+                      progress: 0.4
+                    reasoning: "Customer needs help. Requesting order number to proceed. Safe to continue."
+                    confidence: 0.82
+                    metadata:
+                      request_id: "req_xyz789"
+                      processing_time_ms: 1500
+                      model_used: "gemini-1.5-pro"
+                escalate:
+                  summary: AI decides to escalate
+                  value:
+                    action: "escalate"
+                    response_text: null
+                    updated_state:
+                      active: false
+                      current_turn: 3
+                      progress: 0.6
+                    reasoning: "Customer mentioned 'manager' (escalation keyword). Human intervention required."
+                    confidence: 0.95
+                    metadata:
+                      request_id: "req_abc456"
+                      processing_time_ms: 1200
+                      model_used: "gemini-1.5-pro"
+                goal_complete:
+                  summary: Goal achieved
+                  value:
+                    action: "goal_complete"
+                    response_text: "Great! Your issue is resolved. Is there anything else I can help with?"
+                    updated_state:
+                      active: false
+                      current_turn: 4
+                      progress: 1.0
+                    reasoning: "Issue resolved successfully. Customer satisfied."
+                    confidence: 0.88
+                    metadata:
+                      request_id: "req_def789"
+                      processing_time_ms: 1350
+                      model_used: "gemini-1.5-pro"
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/feedback:
+    post:
+      tags:
+        - feedback
+      summary: Submit feedback on AI suggestions
+      description: |
+        Allows agents to provide feedback on AI-generated suggestions.
+        Used to improve model performance and track suggestion quality.
+
+        **Privacy:** Only metadata is stored. No customer conversation content.
+      operationId: submitFeedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackRequest'
+            examples:
+              helpful:
+                summary: Positive feedback
+                value:
+                  suggestion_id: "req_abc123xyz"
+                  rating: "helpful"
+                  comment: "Perfect response, used it exactly as suggested"
+              not_helpful:
+                summary: Negative feedback with comment
+                value:
+                  suggestion_id: "req_xyz789abc"
+                  rating: "not_helpful"
+                  comment: "Tone was too formal for our brand voice"
+      responses:
+        '200':
+          description: Feedback submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  message:
+                    type: string
+                    example: "Feedback recorded"
+                  feedback_id:
+                    type: string
+                    example: "fb_123456789"
+        '400':
+          description: Invalid feedback data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/conversation-logs:
+    get:
+      tags:
+        - logs
+      summary: Retrieve conversation logs (metadata only)
+      description: |
+        Retrieves conversation logs for analytics and auditing.
+
+        **Privacy:** Only metadata is returned (timestamps, platforms, suggestion IDs).
+        Customer message content is NOT stored or returned.
+      operationId: getConversationLogs
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of logs to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: platform
+          in: query
+          description: Filter by platform
+          required: false
+          schema:
+            type: string
+            enum: [zendesk, intercom, coinbase, robinhood]
+        - name: start_date
+          in: query
+          description: Filter logs from this date (Unix timestamp)
+          required: false
+          schema:
+            type: integer
+            example: 1704067200
+      responses:
+        '200':
+          description: Successfully retrieved logs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ConversationLogMetadata'
+                  total:
+                    type: integer
+                    example: 150
+                  page:
+                    type: integer
+                    example: 1
+              examples:
+                success:
+                  summary: List of conversation logs
+                  value:
+                    logs:
+                      - log_id: "log_123abc"
+                        platform: "zendesk"
+                        timestamp: 1704067200
+                        mode: "suggestion"
+                        suggestion_accepted: true
+                        processing_time_ms: 1250
+                      - log_id: "log_456def"
+                        platform: "intercom"
+                        timestamp: 1704067100
+                        mode: "yolo"
+                        action_taken: "escalate"
+                        processing_time_ms: 1500
+                    total: 150
+                    page: 1
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - logs
+      summary: Save conversation log (metadata only)
+      description: |
+        Saves conversation metadata for analytics.
+
+        **Privacy:** Only metadata should be sent. Do NOT include customer message content.
+      operationId: saveConversationLog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConversationLogCreate'
+            examples:
+              suggestion_log:
+                summary: Suggestion mode log
+                value:
+                  platform: "zendesk"
+                  mode: "suggestion"
+                  suggestion_id: "req_abc123"
+                  suggestion_accepted: true
+                  timestamp: 1704067200
+              yolo_log:
+                summary: YOLO mode log
+                value:
+                  platform: "intercom"
+                  mode: "yolo"
+                  suggestion_id: "req_xyz789"
+                  action_taken: "respond"
+                  goal_type: "resolve_issue"
+                  turn_number: 3
+                  timestamp: 1704067200
+      responses:
+        '201':
+          description: Log saved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  log_id:
+                    type: string
+                    example: "log_abc123xyz"
+        '400':
+          description: Invalid log data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication. Contact admin to obtain a key.
+
+  schemas:
+    # Request Models
+    Message:
+      type: object
+      required:
+        - role
+        - content
+        - timestamp
+      properties:
+        role:
+          type: string
+          enum: [customer, agent]
+          description: Message sender role
+        content:
+          type: string
+          minLength: 1
+          maxLength: 10000
+          description: Message text content
+        timestamp:
+          type: integer
+          description: Unix timestamp (seconds since epoch)
+          example: 1704067200
+
+    UserPreferences:
+      type: object
+      properties:
+        tone:
+          type: string
+          enum: [professional, casual, friendly, empathetic]
+          default: professional
+          description: Desired response tone
+        length:
+          type: string
+          enum: [short, medium, long]
+          default: medium
+          description: Preferred response length
+        language:
+          type: string
+          default: en
+          description: ISO 639-1 language code
+          example: en
+        always_include_greeting:
+          type: boolean
+          default: true
+          description: Whether to always start with a greeting
+
+    SuggestRequest:
+      type: object
+      required:
+        - platform
+        - conversation_context
+      properties:
+        platform:
+          type: string
+          enum: [zendesk, intercom, coinbase, robinhood, generic]
+          description: Chat platform identifier
+        conversation_context:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+          minItems: 1
+          maxItems: 50
+          description: Recent conversation messages (newest last)
+        user_preferences:
+          $ref: '#/components/schemas/UserPreferences'
+
+    Goal:
+      type: object
+      required:
+        - type
+        - description
+      properties:
+        type:
+          type: string
+          enum: [resolve_issue, gather_info, escalate, custom]
+          description: Type of goal to achieve
+        description:
+          type: string
+          minLength: 1
+          maxLength: 500
+          description: Human-readable goal description
+          example: "Resolve shipping delay complaint"
+        max_turns:
+          type: integer
+          minimum: 1
+          maximum: 20
+          default: 10
+          description: Maximum conversation turns before escalation
+
+    GoalState:
+      type: object
+      required:
+        - active
+        - current_turn
+        - progress
+      properties:
+        active:
+          type: boolean
+          description: Whether goal is currently active
+        current_turn:
+          type: integer
+          minimum: 0
+          description: Current turn number in conversation
+        progress:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Goal completion progress (0.0 to 1.0)
+          example: 0.6
+
+    SafetyConstraints:
+      type: object
+      required:
+        - max_turns
+        - escalation_keywords
+        - stop_if_confused
+        - min_confidence
+      properties:
+        max_turns:
+          type: integer
+          minimum: 1
+          maximum: 20
+          description: Maximum turns before auto-escalation
+        escalation_keywords:
+          type: array
+          items:
+            type: string
+          description: Keywords that trigger immediate escalation
+          example: ["angry", "manager", "complaint", "lawsuit"]
+        stop_if_confused:
+          type: boolean
+          default: true
+          description: Escalate if AI is uncertain
+        min_confidence:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          default: 0.7
+          description: Minimum confidence score to proceed
+
+    AutonomousRequest:
+      type: object
+      required:
+        - platform
+        - conversation_context
+        - goal
+        - goal_state
+        - safety_constraints
+      properties:
+        platform:
+          type: string
+          enum: [zendesk, intercom, coinbase, robinhood, generic]
+        conversation_context:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+          minItems: 1
+          maxItems: 50
+        goal:
+          $ref: '#/components/schemas/Goal'
+        goal_state:
+          $ref: '#/components/schemas/GoalState'
+        safety_constraints:
+          $ref: '#/components/schemas/SafetyConstraints'
+
+    FeedbackRequest:
+      type: object
+      required:
+        - suggestion_id
+        - rating
+      properties:
+        suggestion_id:
+          type: string
+          description: ID of the suggestion being rated (from metadata.request_id)
+          example: "req_abc123xyz"
+        rating:
+          type: string
+          enum: [helpful, not_helpful]
+          description: Thumbs up or thumbs down rating
+        comment:
+          type: string
+          maxLength: 1000
+          description: Optional feedback comment
+          example: "Great suggestion but tone was too formal"
+
+    ConversationLogCreate:
+      type: object
+      required:
+        - platform
+        - mode
+        - timestamp
+      properties:
+        platform:
+          type: string
+          enum: [zendesk, intercom, coinbase, robinhood, generic]
+        mode:
+          type: string
+          enum: [suggestion, yolo]
+        suggestion_id:
+          type: string
+          description: Reference to suggestion request ID
+        suggestion_accepted:
+          type: boolean
+          description: Whether agent used the suggestion (suggestion mode)
+        action_taken:
+          type: string
+          enum: [respond, escalate, goal_complete]
+          description: Action taken by AI (yolo mode)
+        goal_type:
+          type: string
+          enum: [resolve_issue, gather_info, escalate, custom]
+          description: Goal type (yolo mode)
+        turn_number:
+          type: integer
+          minimum: 1
+          description: Turn number in conversation (yolo mode)
+        timestamp:
+          type: integer
+          description: Unix timestamp
+
+    # Response Models
+    Suggestion:
+      type: object
+      required:
+        - text
+        - confidence
+      properties:
+        text:
+          type: string
+          description: Generated suggestion text
+          example: "I apologize for the inconvenience. Let me help resolve this issue."
+        confidence:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: AI confidence score (0.0 to 1.0)
+          example: 0.85
+        reasoning:
+          type: string
+          description: Brief explanation of suggestion rationale
+          example: "Customer is frustrated. Empathy + action-oriented response."
+
+    Metadata:
+      type: object
+      required:
+        - request_id
+        - processing_time_ms
+        - model_used
+        - timestamp
+      properties:
+        request_id:
+          type: string
+          description: Unique request identifier for tracking
+          example: "req_abc123xyz"
+        processing_time_ms:
+          type: integer
+          description: Processing time in milliseconds
+          example: 1250
+        model_used:
+          type: string
+          description: Gemini model version used
+          enum: [gemini-1.5-pro, gemini-1.5-flash]
+          example: "gemini-1.5-flash"
+        timestamp:
+          type: integer
+          description: Response timestamp (Unix seconds)
+          example: 1704067210
+
+    SuggestResponse:
+      type: object
+      required:
+        - suggestions
+        - metadata
+      properties:
+        suggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Suggestion'
+          minItems: 1
+          maxItems: 3
+          description: Array of AI-generated suggestions (typically 1-3)
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+
+    AutonomousResponse:
+      type: object
+      required:
+        - action
+        - updated_state
+        - reasoning
+        - confidence
+        - metadata
+      properties:
+        action:
+          type: string
+          enum: [respond, escalate, goal_complete]
+          description: |
+            Action to take:
+            - respond: AI will auto-send response
+            - escalate: Hand off to human agent
+            - goal_complete: Goal achieved, end autonomous mode
+        response_text:
+          type: string
+          nullable: true
+          description: Generated response text (null if action is escalate)
+          example: "I'll check that for you right away."
+        updated_state:
+          $ref: '#/components/schemas/GoalState'
+        reasoning:
+          type: string
+          description: Explanation of decision
+          example: "Customer needs order status. Safe to continue with information gathering."
+        confidence:
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          description: Confidence in decision
+          example: 0.82
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+
+    ConversationLogMetadata:
+      type: object
+      required:
+        - log_id
+        - platform
+        - timestamp
+        - mode
+      properties:
+        log_id:
+          type: string
+          example: "log_123abc"
+        platform:
+          type: string
+          enum: [zendesk, intercom, coinbase, robinhood, generic]
+        timestamp:
+          type: integer
+        mode:
+          type: string
+          enum: [suggestion, yolo]
+        suggestion_accepted:
+          type: boolean
+        action_taken:
+          type: string
+          enum: [respond, escalate, goal_complete]
+        processing_time_ms:
+          type: integer
+          example: 1250
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type identifier
+          example: "Validation Error"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "conversation_context must contain at least 1 message"
+        details:
+          type: object
+          description: Additional error context
+          additionalProperties: true
+        retry_after:
+          type: integer
+          description: Seconds to wait before retrying (for rate limits)
+          example: 45
