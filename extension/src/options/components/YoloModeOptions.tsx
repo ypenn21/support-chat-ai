@@ -23,18 +23,22 @@ export function YoloModeOptions() {
   ]
 
   const handleSelectPreset = async (goal: Goal) => {
-    await chrome.runtime.sendMessage({
-      type: 'SET_GOAL',
-      payload: {
-        goal,
-        constraints: {
-          max_turns: goal.max_turns,
-          escalation_keywords: ['angry', 'manager', 'complaint'],
-          stop_if_confused: true
+    try {
+      await chrome.runtime.sendMessage({
+        type: 'SET_GOAL',
+        payload: {
+          goal,
+          constraints: {
+            max_turns: goal.max_turns,
+            escalation_keywords: ['angry', 'manager', 'complaint'],
+            stop_if_confused: true
+          }
         }
-      }
-    })
-    alert('Goal preset loaded!')
+      })
+      alert('Goal preset loaded!')
+    } catch (error) {
+      console.error('Failed to load goal preset:', error)
+    }
   }
 
   return (

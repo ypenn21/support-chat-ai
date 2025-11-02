@@ -11,8 +11,12 @@ export function EmergencyStop() {
 
   const handleEmergencyStop = async () => {
     if (confirm('Are you sure you want to stop YOLO mode and take manual control?')) {
-      await chrome.runtime.sendMessage({ type: 'EMERGENCY_STOP' })
-      setMode('suggestion')
+      try {
+        await chrome.runtime.sendMessage({ type: 'EMERGENCY_STOP' })
+        setMode('suggestion')
+      } catch (error) {
+        console.error('Failed to execute emergency stop:', error)
+      }
     }
   }
 
