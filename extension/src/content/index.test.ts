@@ -54,7 +54,7 @@ vi.mock('./safety-monitor', () => ({
 describe('Content Script Integration', () => {
   let mockPlatform: any
   let mockChatContainer: HTMLElement
-  let handleNewMessages: (messages: Message[]) => Promise<void>
+  let handleNewMessages: (messages: Message[]) => void
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -135,6 +135,7 @@ describe('Content Script Integration', () => {
           current_step: 'waiting',
           turns_taken: 0,
           info_gathered: [],
+          started_at: Date.now(),
           last_updated: Date.now()
         },
         safetyConstraints: {
@@ -216,7 +217,8 @@ describe('Content Script Integration', () => {
         }],
         metadata: {
           model_used: 'test-model',
-          latency: 1.0
+          latency: 1.0,
+          token_count: 180
         }
       }
 
@@ -226,7 +228,7 @@ describe('Content Script Integration', () => {
       vi.mocked(showLoadingPanel).mockReturnValue(vi.fn())
 
       // Capture the handleNewMessages callback
-      vi.mocked(createChatObserver).mockImplementation((platform, callback, options) => {
+      vi.mocked(createChatObserver).mockImplementation((_platform, callback, _options) => {
         handleNewMessages = callback
         return vi.fn()
       })
@@ -272,14 +274,14 @@ describe('Content Script Integration', () => {
       vi.mocked(waitForPlatform).mockResolvedValue(mockPlatform)
       vi.mocked(waitForChatContainer).mockResolvedValue(mockChatContainer)
 
-      vi.mocked(createChatObserver).mockImplementation((platform, callback, options) => {
+      vi.mocked(createChatObserver).mockImplementation((_platform, callback, _options) => {
         handleNewMessages = callback
         return vi.fn()
       })
 
       vi.mocked(chrome.runtime.sendMessage).mockResolvedValue({
         suggestions: [],
-        metadata: { model_used: 'test', latency: 1.0 }
+        metadata: { model_used: 'test', latency: 1.0, token_count: 50 }
       })
 
       vi.resetModules()
@@ -305,7 +307,7 @@ describe('Content Script Integration', () => {
       vi.mocked(waitForPlatform).mockResolvedValue(mockPlatform)
       vi.mocked(waitForChatContainer).mockResolvedValue(mockChatContainer)
 
-      vi.mocked(createChatObserver).mockImplementation((platform, callback, options) => {
+      vi.mocked(createChatObserver).mockImplementation((_platform, callback, _options) => {
         handleNewMessages = callback
         return vi.fn()
       })
@@ -340,6 +342,7 @@ describe('Content Script Integration', () => {
           current_step: 'waiting',
           turns_taken: 0,
           info_gathered: [],
+          started_at: Date.now(),
           last_updated: Date.now()
         },
         safetyConstraints: {
@@ -385,7 +388,8 @@ describe('Content Script Integration', () => {
         },
         metadata: {
           model_used: 'test-model',
-          latency: 1.0
+          latency: 1.0,
+          token_count: 200
         }
       }
 
@@ -396,7 +400,7 @@ describe('Content Script Integration', () => {
       vi.mocked(SafetyMonitor).mockReturnValue(mockSafetyMonitor)
       vi.mocked(AutoResponder).mockReturnValue(mockAutoResponder)
 
-      vi.mocked(createChatObserver).mockImplementation((platform, callback, options) => {
+      vi.mocked(createChatObserver).mockImplementation((_platform, callback, _options) => {
         handleNewMessages = callback
         return vi.fn()
       })
@@ -426,7 +430,7 @@ describe('Content Script Integration', () => {
       })
 
       expect(mockAutoResponder.sendResponse).toHaveBeenCalledWith(
-        mockResponse.response.content,
+        mockResponse.response!.content,
         true
       )
 
@@ -441,7 +445,7 @@ describe('Content Script Integration', () => {
           messages: expect.arrayContaining([
             expect.objectContaining({
               role: 'agent',
-              content: mockResponse.response.content
+              content: mockResponse.response!.content
             })
           ])
         })
@@ -472,7 +476,7 @@ describe('Content Script Integration', () => {
       vi.mocked(SafetyMonitor).mockReturnValue(mockSafetyMonitor)
       vi.mocked(AutoResponder).mockReturnValue(mockAutoResponder)
 
-      vi.mocked(createChatObserver).mockImplementation((platform, callback, options) => {
+      vi.mocked(createChatObserver).mockImplementation((_platform, callback, _options) => {
         handleNewMessages = callback
         return vi.fn()
       })
@@ -515,7 +519,7 @@ describe('Content Script Integration', () => {
           confidence: 0.5  // Low confidence
         },
         goal_state: mockYoloState.goalState,
-        metadata: { model_used: 'test', latency: 1.0 }
+        metadata: { model_used: 'test', latency: 1.0, token_count: 100 }
       }
 
       mockSafetyMonitor.checkConfidence.mockReturnValue(false)
@@ -527,7 +531,7 @@ describe('Content Script Integration', () => {
       vi.mocked(SafetyMonitor).mockReturnValue(mockSafetyMonitor)
       vi.mocked(AutoResponder).mockReturnValue(mockAutoResponder)
 
-      vi.mocked(createChatObserver).mockImplementation((platform, callback, options) => {
+      vi.mocked(createChatObserver).mockImplementation((_platform, callback, _options) => {
         handleNewMessages = callback
         return vi.fn()
       })
@@ -568,7 +572,7 @@ describe('Content Script Integration', () => {
         action: 'escalate',
         reason: 'Issue too complex for AI',
         goal_state: mockYoloState.goalState,
-        metadata: { model_used: 'test', latency: 1.0 }
+        metadata: { model_used: 'test', latency: 1.0, token_count: 80 }
       }
 
       vi.mocked(getMode).mockResolvedValue('yolo')
@@ -578,7 +582,7 @@ describe('Content Script Integration', () => {
       vi.mocked(SafetyMonitor).mockReturnValue(mockSafetyMonitor)
       vi.mocked(AutoResponder).mockReturnValue(mockAutoResponder)
 
-      vi.mocked(createChatObserver).mockImplementation((platform, callback, options) => {
+      vi.mocked(createChatObserver).mockImplementation((_platform, callback, _options) => {
         handleNewMessages = callback
         return vi.fn()
       })
@@ -616,7 +620,7 @@ describe('Content Script Integration', () => {
         action: 'goal_complete',
         reason: 'All information gathered',
         goal_state: mockYoloState.goalState,
-        metadata: { model_used: 'test', latency: 1.0 }
+        metadata: { model_used: 'test', latency: 1.0, token_count: 60 }
       }
 
       vi.mocked(getMode).mockResolvedValue('yolo')
@@ -626,7 +630,7 @@ describe('Content Script Integration', () => {
       vi.mocked(SafetyMonitor).mockReturnValue(mockSafetyMonitor)
       vi.mocked(AutoResponder).mockReturnValue(mockAutoResponder)
 
-      vi.mocked(createChatObserver).mockImplementation((platform, callback, options) => {
+      vi.mocked(createChatObserver).mockImplementation((_platform, callback, _options) => {
         handleNewMessages = callback
         return vi.fn()
       })
@@ -660,7 +664,7 @@ describe('Content Script Integration', () => {
         action: 'need_info',
         reason: 'Waiting for customer to provide details',
         goal_state: mockYoloState.goalState,
-        metadata: { model_used: 'test', latency: 1.0 }
+        metadata: { model_used: 'test', latency: 1.0, token_count: 70 }
       }
 
       vi.mocked(getMode).mockResolvedValue('yolo')
@@ -670,7 +674,7 @@ describe('Content Script Integration', () => {
       vi.mocked(SafetyMonitor).mockReturnValue(mockSafetyMonitor)
       vi.mocked(AutoResponder).mockReturnValue(mockAutoResponder)
 
-      vi.mocked(createChatObserver).mockImplementation((platform, callback, options) => {
+      vi.mocked(createChatObserver).mockImplementation((_platform, callback, _options) => {
         handleNewMessages = callback
         return vi.fn()
       })
@@ -709,7 +713,7 @@ describe('Content Script Integration', () => {
       vi.mocked(SafetyMonitor).mockReturnValue(mockSafetyMonitor)
       vi.mocked(AutoResponder).mockReturnValue(mockAutoResponder)
 
-      vi.mocked(createChatObserver).mockImplementation((platform, callback, options) => {
+      vi.mocked(createChatObserver).mockImplementation((_platform, callback, _options) => {
         handleNewMessages = callback
         return vi.fn()
       })
@@ -753,8 +757,7 @@ describe('Content Script Integration', () => {
       const { waitForChatContainer, createChatObserver } = await import('./dom-observer')
       const { getMode } = await import('@/lib/storage')
 
-      let cleanupCalled = false
-      const mockCleanup = vi.fn(() => { cleanupCalled = true })
+      const mockCleanup = vi.fn()
 
       vi.mocked(getMode).mockResolvedValue('suggestion')
       vi.mocked(waitForPlatform).mockResolvedValue(mockPlatform)

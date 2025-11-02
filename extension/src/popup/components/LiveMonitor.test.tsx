@@ -41,8 +41,8 @@ describe('LiveMonitor', () => {
     // Default mocks
     vi.mocked(storage.getMode).mockResolvedValue('suggestion')
     vi.mocked(storage.getYoloState).mockResolvedValue(null)
-    vi.mocked(storage.onModeChange).mockImplementation(() => {})
-    vi.mocked(storage.onYoloStateChange).mockImplementation(() => {})
+    vi.mocked(storage.onModeChange).mockImplementation(() => () => {})
+    vi.mocked(storage.onYoloStateChange).mockImplementation(() => () => {})
 
     // Mock chrome.runtime
     globalThis.chrome.runtime.sendMessage = vi.fn().mockResolvedValue({})

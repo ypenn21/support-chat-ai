@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { handleMessage } from './message-router'
-import type { RuntimeMessage, SuggestRequest, AutonomousRequest, UserPreferences, Goal, SafetyConstraints, GoalState } from '@/types'
+import type { RuntimeMessage, AutonomousRequest, UserPreferences, Goal, SafetyConstraints, GoalState } from '@/types'
 
 // Mock dependencies
 vi.mock('./api-client', () => ({
@@ -73,7 +73,7 @@ describe('Message Router Integration', () => {
     // Mock chrome.tabs
     globalThis.chrome = {
       tabs: {
-        query: vi.fn((queryInfo, callback) => {
+        query: vi.fn((_queryInfo, callback) => {
           callback([mockSender.tab!])
         }),
         sendMessage: vi.fn().mockResolvedValue({})
@@ -101,7 +101,8 @@ describe('Message Router Integration', () => {
         }],
         metadata: {
           model_used: 'test-model',
-          latency: 1.0
+          latency: 1.0,
+          token_count: 150
         }
       }
 
@@ -199,6 +200,7 @@ describe('Message Router Integration', () => {
           current_step: 'waiting',
           turns_taken: 0,
           info_gathered: [],
+          started_at: Date.now(),
           last_updated: Date.now()
         },
         safety_constraints: {
@@ -218,7 +220,8 @@ describe('Message Router Integration', () => {
         goal_state: mockRequest.goal_state,
         metadata: {
           model_used: 'test',
-          latency: 1.0
+          latency: 1.0,
+          token_count: 120
         }
       }
 
@@ -459,6 +462,7 @@ describe('Message Router Integration', () => {
           current_step: 'waiting',
           turns_taken: 0,
           info_gathered: [],
+          started_at: Date.now(),
           last_updated: Date.now()
         },
         safetyConstraints: {
@@ -473,6 +477,7 @@ describe('Message Router Integration', () => {
         current_step: 'responding',
         turns_taken: 1,
         info_gathered: ['order_number'],
+        started_at: Date.now(),
         last_updated: Date.now()
       }
 

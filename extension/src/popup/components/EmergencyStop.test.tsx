@@ -15,7 +15,7 @@ describe('EmergencyStop', () => {
 
     // Default mocks
     vi.mocked(storage.getMode).mockResolvedValue('suggestion')
-    vi.mocked(storage.onModeChange).mockImplementation(() => {})
+    vi.mocked(storage.onModeChange).mockImplementation(() => () => {})
 
     // Mock chrome.runtime.sendMessage
     globalThis.chrome.runtime.sendMessage = vi.fn().mockResolvedValue({})
@@ -182,9 +182,10 @@ describe('EmergencyStop', () => {
       vi.mocked(storage.getMode).mockResolvedValue('yolo')
 
       // Capture the onModeChange callback
-      let modeChangeCallback: ((mode: 'suggestion' | 'yolo') => void) | null = null
+      let modeChangeCallback: ((mode: 'suggestion' | 'yolo') => void) | undefined
       vi.mocked(storage.onModeChange).mockImplementation((callback) => {
         modeChangeCallback = callback
+        return () => {}
       })
 
       render(<EmergencyStop />)
