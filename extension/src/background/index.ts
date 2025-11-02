@@ -12,17 +12,22 @@
 import { handleMessage } from './message-router'
 import { createLogger } from '@/lib/logger'
 import { setupGlobalErrorHandler } from '@/lib/error-handler'
+import { goalTracker } from './goal-tracker'
 
 const logger = createLogger('Background')
 
 /**
  * Initialize background service worker
  */
-function initialize(): void {
+async function initialize(): Promise<void> {
+  console.log('%%%%%%%%%%%%%%%%%%%% HELLO FROM THE NEW BACKGROUND SCRIPT - v3 %%%%%%%%%%%%%%%%%%%%');
   logger.info('Background service worker initializing...')
 
   // Setup global error handler
   setupGlobalErrorHandler()
+
+  // Initialize stateful modules
+  await goalTracker.initialize()
 
   // Set up message listener
   chrome.runtime.onMessage.addListener(handleMessage)

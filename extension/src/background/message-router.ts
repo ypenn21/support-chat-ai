@@ -5,7 +5,7 @@ import { createLogger } from '@/lib/logger'
 import { formatErrorForUser } from '@/lib/error-handler'
 import { getAutonomousResponse } from '@/lib/mock-api'
 import { ModeController } from './mode-controller'
-import { GoalTracker } from './goal-tracker'
+import { goalTracker } from './goal-tracker'
 
 const logger = createLogger('Message Router')
 
@@ -177,9 +177,6 @@ async function handleSetGoal(payload: any): Promise<any> {
   try {
     const { goal, constraints } = payload as { goal: Goal; constraints: SafetyConstraints }
 
-    // Initialize goal tracker
-    const goalTracker = new GoalTracker()
-    await goalTracker.initialize()
     await goalTracker.setGoal(goal, constraints)
 
     logger.info('Successfully set goal:', goal.description)
