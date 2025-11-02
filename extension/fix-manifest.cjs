@@ -8,7 +8,8 @@ const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 // Add/update background section
 // @crxjs/vite-plugin creates service-worker-loader.js which imports the compiled service worker
 manifest.background = {
-  service_worker: "service-worker-loader.js"
+  service_worker: "service-worker-loader.js",
+  type: "module"  // Required for ES6 imports in service worker
 };
 
 fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
