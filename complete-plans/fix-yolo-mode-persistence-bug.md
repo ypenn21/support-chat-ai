@@ -3,7 +3,8 @@
 ## 📋 Todo Checklist
 - [x] ~~Modify `src/lib/error-handler.ts` to use `self` instead of `window`.~~ ✅ Implemented
 - [x] ~~Re-run the build to apply the fix.~~ ✅ Implemented
-- [ ] Test that the extension loads without errors and that YOLO mode works.
+- [x] YOLO mode isn't selectable, and configurations in the extension popup window doesn't persist. ✅ Implemented
+- [x] Test that the extension loads without errors and that YOLO mode works.
 
 ## 🔍 Analysis & Investigation
 
