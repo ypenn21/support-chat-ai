@@ -10,18 +10,7 @@ export default defineConfig({
   plugins: [
     react(),
     crx({ manifest }),
-    // Copy service worker after build
-    {
-      name: 'copy-service-worker',
-      writeBundle() {
-        // Ensure dist directory exists
-        if (!existsSync('dist')) {
-          mkdirSync('dist', { recursive: true })
-        }
-        copyFileSync('public/service-worker.js', 'dist/service-worker.js')
-        console.log('✓ Copied service-worker.js to dist/')
-      }
-    }
+
   ],
   resolve: {
     alias: {

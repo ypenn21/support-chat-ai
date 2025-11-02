@@ -45,14 +45,14 @@ export class StorageError extends ExtensionError {
  */
 export function setupGlobalErrorHandler(): void {
   // Handle uncaught errors
-  window.addEventListener('error', (event) => {
+  self.addEventListener('error', (event) => {
     logger.error('Uncaught error:', event.error)
     // Prevent default error handling
     event.preventDefault()
   })
 
   // Handle unhandled promise rejections
-  window.addEventListener('unhandledrejection', (event) => {
+  self.addEventListener('unhandledrejection', (event) => {
     logger.error('Unhandled promise rejection:', event.reason)
     // Prevent default error handling
     event.preventDefault()
