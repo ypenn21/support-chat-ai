@@ -3,129 +3,374 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Chat Interface</title>
+    <title>Coinbase Help Chat - Test Page</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 50px auto;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f7f8f9;
+        }
+        .header {
+            background: #fff;
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0052ff;
+        }
+        .main-content {
+            max-width: 1200px;
+            margin: 40px auto;
             padding: 20px;
         }
-        .chat-wrapper {
-            border: 1px solid #ddd;
+        .open-chat-btn {
+            background: #0052ff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
             border-radius: 8px;
-            padding: 20px;
-            background: #f9f9f9;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 20px;
         }
-        .message {
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 6px;
+        .open-chat-btn:hover {
+            background: #0045db;
         }
-        .customer {
-            background: #e3f2fd;
-            text-align: left;
+
+        /* Coinbase Chat Widget Styles */
+        #cb-chat-wrapper {
+            position: fixed;
+            bottom: 0;
+            right: 0;
+            width: 400px;
+            height: 600px;
+            background: white;
+            border-radius: 12px 12px 0 0;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+            display: none;
+            flex-direction: column;
         }
-        .agent {
-            background: #f1f8e9;
-            text-align: right;
+        #cb-chat-wrapper.visible {
+            display: flex;
         }
-        .chat-input {
+        .chat-header {
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-header h3 {
+            margin: 0;
+            font-size: 18px;
+        }
+        .chat-header button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            padding: 4px 8px;
+        }
+        .chat-body-scroller {
+            flex-grow: 1;
+            padding: 16px;
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+        .chat-body-scroller::-webkit-scrollbar {
+            display: none;
+        }
+        [data-testid="message-bubble"] {
+            margin-bottom: 16px;
+        }
+        [data-testid^="message-container-"] {
+            padding: 12px 16px;
+            border-radius: 16px;
+            max-width: 80%;
+        }
+        /* Agent messages (gray background) */
+        .message-agent [data-testid^="message-container-"] {
+            background: #f1f3f5;
+            margin-right: auto;
+        }
+        /* Customer messages (blue background) */
+        .message-customer [data-testid^="message-container-"] {
+            background: #0052ff;
+            color: white;
+            margin-left: auto;
+        }
+        [data-testid="participant-name"] {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 4px;
+            display: block;
+        }
+        .message-customer [data-testid="participant-name"] {
+            color: rgba(255,255,255,0.8);
+        }
+        .message-text {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .chat-input-area {
+            padding: 16px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .chat-input-area textarea {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            resize: none;
+            font-family: inherit;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        .chat-input-area button {
+            margin-top: 8px;
+            background: #0052ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            float: right;
+        }
+        .chat-input-area button:hover {
+            background: #0045db;
+        }
+        .instructions {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
             margin-top: 20px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
         }
-        .send-button {
-            margin-top: 10px;
-            padding: 10px 20px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+        .instructions h2 {
+            margin-top: 0;
         }
-        #add-message {
-            margin-top: 10px;
-            padding: 10px 20px;
-            background: #2196F3;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
+        .instructions ol {
+            line-height: 1.8;
         }
     </style>
 </head>
 <body>
-    <h1>🧪 Test Chat Interface for Extension</h1>
-    <p>This page simulates a support chat where YOU are the customer and the extension helps you respond to the support agent.</p>
+    <div class="header">
+        <div class="logo">COINBASE HELP</div>
+    </div>
 
-    <div class="chat-wrapper" role="log">
-        <div class="message customer">
-            <strong>You (Customer):</strong>
-            <div class="message-content">Hello! I need help with my order.</div>
-        </div>
-        <div class="message agent">
-            <strong>Support Agent:</strong>
-            <div class="message-content">Hi there! I'd be happy to help. What's your order number?</div>
-        </div>
-        <div class="message customer">
-            <strong>You (Customer):</strong>
-            <div class="message-content">It's ORDER-12345. Where is my shipping information?</div>
+    <div class="main-content">
+        <h1>Test Your Extension</h1>
+        <button class="open-chat-btn" id="openChat">💬 Open Chat Widget</button>
+
+        <div class="instructions">
+            <h2>📝 Test Instructions:</h2>
+            <ol>
+                <li><strong>Load Extension</strong>: Make sure the extension is loaded in Chrome (chrome://extensions)</li>
+                <li><strong>Open DevTools</strong>: Press F12 to see console logs</li>
+                <li><strong>Open Chat</strong>: Click the "Open Chat Widget" button above</li>
+                <li><strong>Configure YOLO Mode</strong>:
+                    <ul>
+                        <li>Click extension icon in toolbar</li>
+                        <li>Switch to YOLO mode</li>
+                        <li>Set a goal (e.g., "get update on ticket-id 12345")</li>
+                        <li>Enable YOLO mode</li>
+                    </ul>
+                </li>
+                <li><strong>Test Flow</strong>: Click "Add Agent Message" to simulate chatbot/agent responses</li>
+                <li><strong>Verify Logs</strong>: Check console for:
+                    <ul>
+                        <li>[Platform] Detected: Coinbase</li>
+                        <li>[YOLO] Simulating thinking delay</li>
+                        <li>[Auto Responder] Waiting for input box...</li>
+                        <li>[YOLO] Response sent successfully!</li>
+                    </ul>
+                </li>
+            </ol>
         </div>
     </div>
 
-    <div style="margin-top: 20px;">
-        <button id="add-message">➕ Simulate New Support Agent Message</button>
-    </div>
-
-    <div style="margin-top: 20px;">
-        <input type="text" class="chat-input" placeholder="Type your message..." id="message-input">
-        <button class="send-button">Send</button>
-    </div>
-
-    <div style="margin-top: 30px; padding: 15px; background: #fff3cd; border-radius: 4px;">
-        <h3>📝 Instructions:</h3>
-        <ol>
-            <li>Make sure the extension is loaded in Chrome (chrome://extensions)</li>
-            <li>Open DevTools (F12) to see console logs from the extension</li>
-            <li>Click "Simulate New Support Agent Message" to add a message from support</li>
-            <li>The extension should detect the agent's message and suggest YOUR response (as the customer)</li>
-            <li>Look for the AI suggestion panel in the bottom-right corner</li>
-            <li>The suggestion will be what YOU (the customer) should say back to the support agent</li>
-        </ol>
+    <!-- Coinbase Chat Widget -->
+    <div id="cb-chat-wrapper">
+        <div class="chat-header">
+            <h3 id="agentName">Virtual Assistant</h3>
+            <button aria-label="Hide chat window" id="closeChat">✕</button>
+        </div>
+        <div class="chat-body-scroller">
+            <!-- Initial greeting from Virtual Assistant -->
+            <div data-testid="message-bubble" class="message-agent">
+                <span data-testid="participant-name">Virtual Assistant</span>
+                <div data-testid="message-container-initial" style="background: #f1f3f5;">
+                    <p class="message-text">Hi! I'm here to help. What can I assist you with today?</p>
+                </div>
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <textarea placeholder="Type a message..." rows="3" id="chatInput"></textarea>
+            <button aria-label="Send message" id="sendBtn">Send</button>
+        </div>
     </div>
 
     <script>
-        const chatWrapper = document.querySelector('.chat-wrapper');
-        const addMessageBtn = document.getElementById('add-message');
+        const chatWrapper = document.getElementById('cb-chat-wrapper');
+        const openChatBtn = document.getElementById('openChat');
+        const closeChatBtn = document.getElementById('closeChat');
+        const chatScroller = document.querySelector('.chat-body-scroller');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const agentNameEl = document.getElementById('agentName');
 
-        const sampleMessages = [
-            "I see your order is still processing. Can you provide more details?",
-            "Let me look into that for you. What was the order date?",
-            "I'll need your account email to proceed with the refund.",
-            "I understand your concern. Let me check the shipping status.",
-            "For security purposes, can you verify your billing address?",
-            "I can help with that! What's your tracking number?",
-            "Our return policy allows 30 days. Would you like to start the process?",
-            "I can assist with password reset. What's your account username?"
+        let messageCount = 0;
+        let isHumanAgent = false;
+
+        // Sample messages for Virtual Assistant (chatbot)
+        const botMessages = [
+            "I can help you with account issues, transactions, or general questions. What do you need?",
+            "Let me look into that for you. Can you provide more details?",
+            "I understand. Let me check our system for more information.",
+            "To better assist you, could you provide your transaction ID or account details?",
+            "I see. This might require a human agent. Would you like me to transfer you?",
         ];
 
-        let messageIndex = 0;
+        // Sample messages for human agent
+        const agentMessages = [
+            "Hi, I'm Sarah from Coinbase Support. I'll take over from here. How can I help you today?",
+            "Thank you for providing those details. Let me verify your account information.",
+            "I've reviewed your case. Here's what I found...",
+            "I can help you resolve this. What's the ticket ID you're referring to?",
+            "Let me escalate this to our technical team. I'll get back to you shortly.",
+        ];
 
-        addMessageBtn.addEventListener('click', () => {
-            const message = document.createElement('div');
-            message.className = 'message agent';
-            message.innerHTML = `
-                <strong>Support Agent:</strong>
-                <div class="message-content">${sampleMessages[messageIndex % sampleMessages.length]}</div>
-            `;
-            chatWrapper.appendChild(message);
-            messageIndex++;
-
-            console.log('New support agent message added - Extension should suggest YOUR response!');
+        // Toggle chat visibility
+        openChatBtn.addEventListener('click', () => {
+            chatWrapper.classList.add('visible');
+            console.log('✅ Chat widget opened - Extension should detect Coinbase platform');
         });
+
+        closeChatBtn.addEventListener('click', () => {
+            chatWrapper.classList.remove('visible');
+        });
+
+        // Add customer message
+        function addCustomerMessage(text) {
+            const messageDiv = document.createElement('div');
+            messageDiv.setAttribute('data-testid', 'message-bubble');
+            messageDiv.className = 'message-customer';
+            messageDiv.innerHTML = `
+                <span data-testid="participant-name">You</span>
+                <div data-testid="message-container-customer-${messageCount}" style="background: #0052ff; color: white; margin-left: auto;">
+                    <p class="message-text">${text}</p>
+                </div>
+            `;
+            chatScroller.appendChild(messageDiv);
+            chatScroller.scrollTop = chatScroller.scrollHeight;
+            messageCount++;
+            console.log('💬 Customer message added:', text.substring(0, 50) + '...');
+        }
+
+        // Add agent message (bot or human)
+        function addAgentMessage(text, agentName = null) {
+            const currentAgent = agentName || (isHumanAgent ? 'Sarah' : 'Virtual Assistant');
+
+            const messageDiv = document.createElement('div');
+            messageDiv.setAttribute('data-testid', 'message-bubble');
+            messageDiv.className = 'message-agent';
+            messageDiv.innerHTML = `
+                <span data-testid="participant-name">${currentAgent}</span>
+                <div data-testid="message-container-agent-${messageCount}" style="background: #f1f3f5;">
+                    <p class="message-text">${text}</p>
+                </div>
+            `;
+            chatScroller.appendChild(messageDiv);
+            chatScroller.scrollTop = chatScroller.scrollHeight;
+            messageCount++;
+            console.log(`🤖 ${currentAgent} message added:`, text.substring(0, 50) + '...');
+        }
+
+        // Send button handler
+        sendBtn.addEventListener('click', () => {
+            const text = chatInput.value.trim();
+            if (text) {
+                addCustomerMessage(text);
+                chatInput.value = '';
+
+                // Auto-respond after a delay (simulating agent typing)
+                setTimeout(() => {
+                    const messages = isHumanAgent ? agentMessages : botMessages;
+                    const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+                    addAgentMessage(randomMsg);
+                }, 1500);
+            }
+        });
+
+        // Enter key to send
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendBtn.click();
+            }
+        });
+
+        // Simulate transition from bot to human agent
+        function transitionToHumanAgent() {
+            if (isHumanAgent) {
+                alert('Already connected to human agent!');
+                return;
+            }
+
+            isHumanAgent = true;
+            agentNameEl.textContent = 'Sarah (Support Agent)';
+
+            // Add transfer message
+            addAgentMessage(
+                "Transferring you to a human agent. Please wait a moment...",
+                "Virtual Assistant"
+            );
+
+            setTimeout(() => {
+                addAgentMessage(
+                    "Hi, I'm Sarah from Coinbase Support. I'll take over from here. How can I help you today?",
+                    "Sarah"
+                );
+                console.log('🔄 Agent transition: Virtual Assistant → Sarah (Human Agent)');
+            }, 2000);
+        }
+
+        // Add button to manually trigger agent transition
+        const transitionBtn = document.createElement('button');
+        transitionBtn.textContent = '🔄 Transfer to Human Agent';
+        transitionBtn.className = 'open-chat-btn';
+        transitionBtn.style.marginLeft = '10px';
+        transitionBtn.addEventListener('click', transitionToHumanAgent);
+        openChatBtn.parentNode.insertBefore(transitionBtn, openChatBtn.nextSibling);
+
+        // Add message button for testing
+        const addMsgBtn = document.createElement('button');
+        addMsgBtn.textContent = '➕ Add Agent Message';
+        addMsgBtn.className = 'open-chat-btn';
+        addMsgBtn.style.marginLeft = '10px';
+        addMsgBtn.addEventListener('click', () => {
+            if (!chatWrapper.classList.contains('visible')) {
+                alert('Please open the chat widget first!');
+                return;
+            }
+            const messages = isHumanAgent ? agentMessages : botMessages;
+            const randomMsg = messages[Math.floor(Math.random() * messages.length)];
+            addAgentMessage(randomMsg);
+        });
+        transitionBtn.parentNode.insertBefore(addMsgBtn, transitionBtn.nextSibling);
+
+        // Log that page is ready
+        console.log('✅ Coinbase Help Test Page loaded');
+        console.log('📋 Chat selectors available:');
+        console.log('  - #cb-chat-wrapper (main container)');
+        console.log('  - .chat-body-scroller (messages container)');
+        console.log('  - [data-testid="message-bubble"] (message elements)');
+        console.log('  - [data-testid="participant-name"] (agent/customer names)');
+        console.log('  - #chatInput (input box)');
+        console.log('  - #sendBtn (send button)');
     </script>
 </body>
 </html>

@@ -24,18 +24,24 @@ export class AutoResponder {
    * @param preview - Whether to show preview before sending
    */
   async sendResponse(content: string, preview = true): Promise<void> {
-    logger.info('Preparing to send autonomous response')
+    logger.info('[Auto Responder] Preparing to send autonomous response')
 
-    const inputBox = this.platform.getInputBox()
-    const sendButton = this.platform.getSendButton()
+    // Wait for input box and send button to be available (may load asynchronously)
+    logger.info('[Auto Responder] Waiting for input box...')
+    const inputBox = await this.waitForElement(() => this.platform.getInputBox(), 5000)
+
+    logger.info('[Auto Responder] Waiting for send button...')
+    const sendButton = await this.waitForElement(() => this.platform.getSendButton(), 5000)
 
     if (!inputBox) {
-      throw new Error('Cannot find input box - unable to send response')
+      throw new Error('Cannot find input box - unable to send response (timeout after 5s)')
     }
 
     if (!sendButton) {
-      throw new Error('Cannot find send button - unable to send response')
+      throw new Error('Cannot find send button - unable to send response (timeout after 5s)')
     }
+
+    logger.info('[Auto Responder] Input box and send button found')
 
     // Inject response into input
     this.setInputValue(inputBox, content)
@@ -179,5 +185,45 @@ export class AutoResponder {
    */
   getPreviewDelay(): number {
     return this.previewDelay
+  }
+
+  /**
+   * Wait for element to become available
+   * Useful for async-loaded chat widgets where input/send buttons load after container
+   * @param getter - Function that returns the element or null
+   * @param maxWaitMs - Maximum time to wait in milliseconds
+   * @param checkIntervalMs - How often to check in milliseconds
+   * @returns The element if found, null if timeout
+   */
+  private async waitForElement(
+    getter: () => HTMLElement | null,
+    maxWaitMs: number = 5000,
+    checkIntervalMs: number = 200
+  ): Promise<HTMLElement | null> {
+    const startTime = Date.now()
+    let attempts = 0
+
+    return new Promise((resolve) => {
+      const checkElement = () => {
+        attempts++
+        const element = getter()
+
+        if (element) {
+          logger.debug(`[Auto Responder] Element found after ${attempts} attempts (${Date.now() - startTime}ms)`)
+          resolve(element)
+          return
+        }
+
+        if (Date.now() - startTime >= maxWaitMs) {
+          logger.warn(`[Auto Responder] Timeout waiting for element after ${attempts} attempts (${maxWaitMs}ms)`)
+          resolve(null)
+          return
+        }
+
+        setTimeout(checkElement, checkIntervalMs)
+      }
+
+      checkElement()
+    })
   }
 }

@@ -41,6 +41,9 @@ export function createChatObserver(
   // Track the last message count to detect new messages
   let previousMessageCount = platform.getMessageElements().length
 
+  // Track last agent name for transition detection (chatbot -> human agent)
+  let lastAgentName: string | null = null
+
   // Debounced mutation handler to prevent excessive calls
   const handleMutation = debounce(() => {
     try {
@@ -60,10 +63,40 @@ export function createChatObserver(
           return
         }
 
-        // In Suggestion Mode: trigger on any new message
-        // In YOLO Mode: only trigger on customer messages
-        const shouldTrigger = mode === 'suggestion' ||
-          (mode === 'yolo' && isLastMessageFromCustomer(context))
+        // Log last message info
+        const lastMsg = context[context.length - 1]
+        console.log(`[DOM Observer] Last message role: ${lastMsg.role}, content: "${lastMsg.content.substring(0, 50)}..."`)
+
+        // Detect agent transitions (chatbot -> human agent)
+        // This is important for YOLO mode on platforms like Coinbase
+        if (lastMsg.role === 'agent') {
+          // Try to extract agent name from the last message element
+          const messageElements = platform.getMessageElements()
+          if (messageElements.length > 0) {
+            const lastMessageElement = messageElements[messageElements.length - 1]
+            const participantNameElement = lastMessageElement.querySelector('[data-testid="participant-name"]')
+
+            if (participantNameElement) {
+              const currentAgentName = participantNameElement.textContent?.trim() || 'Unknown Agent'
+
+              if (lastAgentName && lastAgentName !== currentAgentName) {
+                console.log(`[DOM Observer] Agent transition detected: "${lastAgentName}" -> "${currentAgentName}"`)
+                // Could broadcast this event if needed for UI updates
+              }
+
+              lastAgentName = currentAgentName
+              console.log(`[DOM Observer] Current agent: ${currentAgentName}`)
+            }
+          }
+        }
+
+        // In Suggestion Mode: only trigger on customer messages (agent needs suggestions)
+        // In YOLO Mode: trigger on ALL messages (AI responds to chatbot, customer, and agent transitions)
+        const shouldTrigger =
+          (mode === 'suggestion' && isLastMessageFromCustomer(context)) ||
+          (mode === 'yolo')  // Always trigger in YOLO mode for any new message
+
+        console.log(`[DOM Observer] Mode: ${mode}, shouldTrigger: ${shouldTrigger}`)
 
         // Optional: filter to only customer messages
         if (onlyCustomerMessages && !isLastMessageFromCustomer(context)) {
@@ -74,7 +107,10 @@ export function createChatObserver(
 
         if (shouldTrigger) {
           // Trigger callback with conversation context
+          console.log(`[DOM Observer] Triggering callback with ${context.length} messages in context`)
           onNewMessage(context)
+        } else {
+          console.log('[DOM Observer] Not triggering - conditions not met')
         }
 
         // Update message count

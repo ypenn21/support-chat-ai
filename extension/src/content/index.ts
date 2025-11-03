@@ -71,8 +71,10 @@ async function initialize(): Promise<void> {
 
   // Initialize YOLO mode components if needed
   if (currentMode === 'yolo' && yoloState) {
-    autoResponder = new AutoResponder(platform, 3000) // 3 second preview delay
+    autoResponder = new AutoResponder(platform, 2000) // 2 second preview delay (+ 2-3s thinking = 4-5s total)
     safetyMonitor = new SafetyMonitor(yoloState.safetyConstraints)
+    logger.info('Auto Responder initialized with 2000ms preview delay')
+    logger.info('Safety monitor initialized', yoloState.safetyConstraints)
     logger.info('YOLO mode components initialized')
   }
 
@@ -214,12 +216,19 @@ async function handleYoloMode(messages: Message[]): Promise<void> {
     return
   }
 
+  // Simulate "thinking" delay before generating response (2-3 seconds)
+  // This makes the AI responses feel more natural and less robotic
+  const thinkingDelay = 2000 + Math.random() * 1000 // 2-3 seconds
+  logger.info(`[YOLO] Simulating thinking delay: ${Math.floor(thinkingDelay)}ms`)
+  await new Promise(resolve => setTimeout(resolve, thinkingDelay))
+  logger.info('[YOLO] Thinking delay complete, generating response...')
+
   try {
     // Get the platform type for the request
     const platformType = detectPlatformType()
 
     // Request autonomous response from background worker
-    logger.info('Requesting autonomous response...')
+    logger.info('[YOLO] Requesting autonomous response from background worker...')
 
     const response: AutonomousResponse = await chrome.runtime.sendMessage({
       type: 'GET_AUTONOMOUS_RESPONSE',
@@ -232,30 +241,34 @@ async function handleYoloMode(messages: Message[]): Promise<void> {
       }
     })
 
-    logger.info('Received autonomous response, action:', response.action)
+    logger.info('[YOLO] Received autonomous response, action:', response.action)
 
     // Handle different actions
     switch (response.action) {
       case 'respond':
         if (response.response) {
+          logger.info('[YOLO] AI decided to respond with confidence:', response.response.confidence)
+
           // Check confidence
           if (!safetyMonitor.checkConfidence(response.response.confidence)) {
-            logger.warn('Low confidence response, escalating')
+            logger.warn('[YOLO] Low confidence response, escalating. Confidence:', response.response.confidence)
             await handleEscalation('AI confidence too low')
             return
           }
 
           // Auto-send response
-          logger.info('Auto-sending response:', response.response.content)
+          logger.info('[YOLO] Auto-sending response (preview enabled):', response.response.content.substring(0, 100) + '...')
           await autoResponder.sendResponse(response.response.content, true) // With preview
 
           // Update goal state
+          logger.info('[YOLO] Updating goal state...')
           await chrome.runtime.sendMessage({
             type: 'UPDATE_GOAL_STATE',
             payload: { goalState: response.goal_state }
           })
 
           // Broadcast conversation update
+          logger.info('[YOLO] Broadcasting conversation update...')
           await chrome.runtime.sendMessage({
             type: 'CONVERSATION_UPDATE',
             payload: { messages: [...messages, {
@@ -265,30 +278,32 @@ async function handleYoloMode(messages: Message[]): Promise<void> {
             }]}
           })
 
-          logger.info('YOLO response sent successfully')
+          logger.info('[YOLO] Response sent successfully!')
+        } else {
+          logger.warn('[YOLO] Action is "respond" but no response content provided')
         }
         break
 
       case 'escalate':
-        logger.warn('AI decided to escalate:', response.reason)
+        logger.warn('[YOLO] AI decided to escalate:', response.reason)
         await handleEscalation(response.reason || 'AI escalation')
         break
 
       case 'goal_complete':
-        logger.info('Goal completed!', response.reason)
+        logger.info('[YOLO] Goal completed!', response.reason)
         await handleGoalCompletion(response.reason || 'Goal achieved')
         break
 
       case 'need_info':
-        logger.info('Waiting for more information:', response.reason)
+        logger.info('[YOLO] AI waiting for more information:', response.reason)
         // Do nothing, wait for next message
         break
 
       default:
-        logger.warn('Unknown action from AI:', response.action)
+        logger.warn('[YOLO] Unknown action from AI:', response.action)
     }
   } catch (error) {
-    logger.error('Failed to handle YOLO mode:', error)
+    logger.error('[YOLO] Failed to handle YOLO mode:', error)
     await handleEscalation(`Error: ${error}`)
   }
 }

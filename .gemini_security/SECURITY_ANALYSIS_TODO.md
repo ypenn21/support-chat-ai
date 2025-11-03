@@ -1,0 +1,11 @@
+- [x] SAST Recon on extension/src/content/auto-responder.ts
+  - [x] Investigate data flow from content on line 25
+- [x] SAST Recon on extension/src/content/dom-observer.ts
+  - [x] Investigate data flow from currentAgentName on line 90
+- [x] SAST Recon on extension/src/content/index.ts
+  - [x] Investigate data flow from response.error on line 180
+  - [x] Investigate data flow from suggestion on line 186
+  - [x] Investigate data flow from response.reason on line 301
+- [x] SAST Recon on extension/test-page.html
+  - [ ] Investigate data flow from text on line 301
+- [ ] Conduct the final review of all findings as per your **Minimizing False Positives** operating principle and generate the final report.
