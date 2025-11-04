@@ -1,6 +1,6 @@
 """Response models for API endpoints"""
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 
 from pydantic import BaseModel, Field
 
@@ -8,18 +8,18 @@ from pydantic import BaseModel, Field
 class Suggestion(BaseModel):
     """A single response suggestion"""
 
-    id: str
-    content: str = Field(..., min_length=1)
-    confidence: float = Field(..., ge=0.0, le=1.0)
-    reasoning: Optional[str] = None
+    text: str = Field(..., min_length=1, description="Suggested response text")
+    confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence score")
+    reasoning: Optional[str] = Field(None, description="Explanation of suggestion")
 
 
 class Metadata(BaseModel):
     """Metadata about the suggestion generation"""
 
+    request_id: str
+    processing_time_ms: int = Field(..., ge=0)
     model_used: str
-    latency: float = Field(..., ge=0.0)
-    token_count: int = Field(..., ge=0)
+    timestamp: int
 
 
 class SuggestResponse(BaseModel):
@@ -28,24 +28,13 @@ class SuggestResponse(BaseModel):
     suggestions: List[Suggestion] = Field(..., min_length=1)
     metadata: Metadata
 
-    model_config = {
-        "json_schema_extra": {
-            "examples": [
-                {
-                    "suggestions": [
-                        {
-                            "id": "sugg_123",
-                            "content": "Thank you for providing your order number. I've checked on order #12345 and I can see it's currently in transit. It should arrive within 2-3 business days. Would you like me to send you the tracking information?",
-                            "confidence": 0.92,
-                            "reasoning": "Acknowledges the order number, provides status update, sets expectations, and offers next steps",
-                        }
-                    ],
-                    "metadata": {
-                        "model_used": "gemini-1.5-pro",
-                        "latency": 1.23,
-                        "token_count": 156,
-                    },
-                }
-            ]
-        }
-    }
+
+class AutonomousResponse(BaseModel):
+    """Response from autonomous agent (YOLO mode)"""
+
+    action: str = Field(..., description="Action taken: respond, escalate, or goal_complete")
+    response_text: Optional[str] = Field(None, description="Generated response (if action=respond)")
+    updated_state: BaseModel = Field(..., description="Updated goal state")
+    reasoning: str = Field(..., description="Explanation of decision")
+    confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence in decision")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")

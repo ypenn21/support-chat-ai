@@ -49,8 +49,10 @@ async def root() -> JSONResponse:
     )
 
 
-# TODO: Add API routes
-# from app.api.routes import suggest, auth, feedback
-# app.include_router(suggest.router, prefix="/api", tags=["suggestions"])
-# app.include_router(auth.router, prefix="/api", tags=["auth"])
-# app.include_router(feedback.router, prefix="/api", tags=["feedback"])
+# API routes
+from app.api.routes import suggest, autonomous, feedback, conversation_logs
+
+app.include_router(suggest.router, prefix="/api", tags=["suggestions"])
+app.include_router(autonomous.router, prefix="/api", tags=["autonomous"])
+app.include_router(feedback.router, prefix="/api", tags=["feedback"])
+app.include_router(conversation_logs.router, prefix="/api", tags=["logs"])

@@ -15,6 +15,12 @@ google-cloud-firestore==2.14.0
 google-cloud-logging==3.9.0
 vertexai==1.71.0
 
+# Google ADK (Agent Development Kit)
+google-adk
+
+# Rate limiting
+slowapi
+
 # Utilities
 python-dotenv==1.0.0
 httpx==0.26.0

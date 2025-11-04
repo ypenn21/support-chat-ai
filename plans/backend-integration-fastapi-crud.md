@@ -1,63 +1,204 @@
-# Feature Implementation Plan: Backend Integration with FastAPI CRUD REST API + Google ADK
+# Feature Implementation Plan: Backend Integration with FastAPI + Google ADK (Simplified)
 
 ## 📋 Todo Checklist
-- [ ] Set up backend development environment and dependencies
-- [ ] Install and configure Google ADK (Agent Development Kit)
-- [ ] Design ADK agent architecture for Suggestion and YOLO modes
-- [ ] Implement ADK agents with Gemini integration
-- [ ] Implement Vertex AI Gemini service integration (via ADK)
-- [ ] Create CRUD API endpoints (Suggestion Mode)
-- [ ] Create CRUD API endpoints (YOLO/Autonomous Mode)
-- [ ] Implement conversation logging and analytics
+- [x] Set up backend development environment and dependencies
+- [x] Install and configure Google ADK (Agent Development Kit)
+- [x] Design simplified single-agent architecture for both modes
+- [x] Implement unified agent service with Gemini 2.5 Flash
+- [x] Create CRUD API endpoints (Suggestion + Autonomous modes)
+- [x] Implement conversation logging and analytics
+- [x] Test backend endpoints locally (all passing ✓)
 - [ ] Add authentication and rate limiting middleware
 - [ ] Replace mock API client with real API calls in extension
-- [ ] Test backend endpoints locally
-- [ ] Deploy backend to Google Cloud Run
+- [ ] Implement actual ADK agent.run() calls (currently placeholders)
+- [ ] Deploy unified service to Google Cloud Run
 - [ ] Configure GCP services (Vertex AI, Secret Manager, Firestore)
 - [ ] End-to-end testing with extension
 - [ ] Final Review and Testing
 
+## ✅ Implementation Progress
+
+### **Completed (2025-11-04)**
+
+#### **Phase 0 & 1: Core Backend with ADK - COMPLETE ✓**
+
+**Environment Setup:**
+- ✅ Python virtual environment created
+- ✅ Google ADK installed (`google-adk` + dependencies)
+- ✅ Environment variables configured in `.env` file
+- ✅ Project structure created (`app/agents/`, `app/agents/tools/`, `app/api/routes/`)
+
+**ADK Tool Functions Implemented:**
+- ✅ `app/agents/tools/context_tools.py` - `process_conversation_context()`
+  - Validates message count (1-50)
+  - Extracts entities (order numbers, emails)
+  - Detects conversation intent
+- ✅ `app/agents/tools/goal_tools.py` - `track_goal_progress()`
+  - Increments turn counter
+  - Calculates progress percentage
+  - Returns updated goal state
+- ✅ `app/agents/tools/safety_tools.py` - `check_safety_constraints()`
+  - Checks escalation keywords
+  - Validates confidence thresholds
+  - Detects confusion patterns
+
+**Agent Services Implemented:**
+- ✅ `app/agents/suggestion_agent.py` - `SuggestionAgentService`
+  - Single agent with Gemini 2.5 Flash
+  - Tools: process_conversation_context
+  - Returns Suggestion with confidence score
+  - **Note**: Uses placeholder responses (TODO: actual ADK agent.run() call)
+
+- ✅ `app/agents/autonomous_agent.py` - `AutonomousAgentService`
+  - Single agent with Gemini 2.5 Flash
+  - Tools: track_goal_progress, check_safety_constraints
+  - Returns AutonomousResponse with action decision
+  - **Note**: Uses placeholder responses (TODO: actual ADK agent.run() call)
+
+- ✅ `app/services/agent_service.py` - `AgentService`
+  - Unified coordination layer for both agents
+  - Initializes agents with GCP project settings
+
+**Pydantic Models Updated:**
+- ✅ `app/models/request.py` - Added models:
+  - `Goal` - YOLO mode goal definition
+  - `GoalState` - Current goal progress state
+  - `SafetyConstraints` - Autonomous mode safety rules
+  - `AutonomousRequest` - Complete autonomous request model
+  - Updated `SuggestRequest` with request_id field
+
+- ✅ `app/models/response.py` - Updated models:
+  - `Suggestion` - Changed `id`/`content` to `text` field
+  - `Metadata` - Updated fields (request_id, processing_time_ms, timestamp)
+  - `AutonomousResponse` - New model for YOLO mode responses
+
+#### **Phase 2: API Endpoints - COMPLETE ✓**
+
+**Endpoints Implemented:**
+- ✅ `app/api/routes/suggest.py` - POST `/api/suggest-response`
+  - Accepts SuggestRequest
+  - Calls SuggestionAgent via AgentService
+  - Returns SuggestResponse with metadata
+  - **Test Result**: 200 OK ✓
+
+- ✅ `app/api/routes/autonomous.py` - POST `/api/autonomous-response`
+  - Accepts AutonomousRequest
+  - Validates goal, goal_state, safety_constraints
+  - Checks turn limits
+  - Calls AutonomousAgent via AgentService
+  - **Test Result**: 200 OK ✓
+
+- ✅ `app/api/routes/feedback.py` - POST `/api/feedback`
+  - Accepts FeedbackRequest (rating, feedback_text, suggestion_used)
+  - Logs feedback (TODO: persist to Firestore)
+  - Returns feedback_id and status
+  - **Test Result**: 200 OK ✓
+
+- ✅ `app/api/routes/conversation_logs.py` - Two endpoints:
+  - POST `/api/conversation-logs` - Save conversation log
+  - GET `/api/conversation-logs` - Retrieve logs with filters
+  - In-memory storage for testing (TODO: replace with Firestore)
+  - **Test Results**: Both 200 OK ✓
+
+**FastAPI Application:**
+- ✅ All routes registered in `app/main.py`
+- ✅ CORS middleware configured
+- ✅ Health endpoint working
+- ✅ Swagger docs available at `/docs`
+
+**Testing:**
+- ✅ Local server tested on port 8001
+- ✅ Test scripts created: `test_api.py`, `test_autonomous_api.py`
+- ✅ All endpoints return 200 OK
+- ✅ Response models match expected structure
+
+**Test Results Summary:**
+```
+✓ GET /health - Status: healthy
+✓ GET / - Message with API info
+✓ POST /api/suggest-response - Returns suggestions
+✓ POST /api/autonomous-response - Returns action decision
+✓ POST /api/feedback - Records feedback
+✓ POST /api/conversation-logs - Saves log
+✓ GET /api/conversation-logs - Retrieves logs with pagination
+```
+
+### **Remaining Work**
+
+#### **Phase 2: Complete ADK Integration**
+- [ ] Replace placeholder responses with actual `agent.run()` calls
+- [ ] Test actual Vertex AI API integration
+- [ ] Handle ADK tool invocation responses
+- [ ] Add error handling for ADK failures
+
+#### **Phase 3: Security & Infrastructure (1-2 hours)**
+- [ ] Implement API key authentication middleware
+- [ ] Add SlowAPI rate limiting (60 req/min)
+- [ ] Replace in-memory storage with Firestore
+- [ ] Add Secret Manager integration for API keys
+- [ ] Set up Cloud Logging
+
+#### **Phase 4: Extension Integration (1-2 hours)**
+- [ ] Replace mock API in `extension/src/background/api-client.ts`
+- [ ] Add Cloud Run URL to extension environment config
+- [ ] Update TypeScript types to match updated Pydantic models
+- [ ] Test extension with real backend
+
+#### **Phase 5: Deployment (1-2 hours)**
+- [ ] Build and push Docker image to Artifact Registry
+- [ ] Deploy unified service to Cloud Run
+- [ ] Configure production environment variables
+- [ ] Set up Cloud Run service with min/max instances
+- [ ] Get production URL and update extension
+
+#### **Phase 6: Testing & Validation (2-3 hours)**
+- [ ] Write pytest unit tests for agents and tools
+- [ ] Write integration tests for API endpoints
+- [ ] Validate OpenAPI spec compliance
+- [ ] End-to-end testing with extension
+- [ ] Performance testing (latency < 2s target)
+- [ ] Load testing with multiple concurrent requests
+
+**Important Notes:**
+1. All agents currently use placeholder responses - actual ADK `agent.run()` calls need implementation
+2. Conversation logs use in-memory storage - needs Firestore integration for production
+3. No authentication/rate limiting yet - required for production deployment
+4. Local testing successful - ready for GCP deployment after completing remaining tasks
+
 ## 🔍 Analysis & Investigation
 
-### Google ADK Integration Overview
+### Simplified Architecture Overview
 
-**What is Google ADK?**
-Google Agent Development Kit (ADK) is an open-source, code-first Python framework for building, evaluating, and deploying sophisticated AI agents with flexibility and control. Released at Google Cloud NEXT 2025, ADK is the same framework powering agents within Google products like Agentspace and Google Customer Engagement Suite (CES).
+**Key Simplifications:**
+1. **Single Model**: Gemini 2.5 Flash for ALL operations (Suggestion + YOLO modes)
+2. **Single Agent per Mode**: No multi-agent orchestration complexity
+3. **Unified Service**: FastAPI + ADK agents deployed together in one Cloud Run service
+4. **No Agent Engine**: Direct Cloud Run deployment only
 
-**Key ADK Features for This Project:**
-1. **Model-Agnostic**: Optimized for Gemini but supports other models via LiteLLM
-2. **Flexible Orchestration**: Sequential, Parallel, Loop workflows + LLM-driven dynamic routing
-3. **Rich Tool Ecosystem**: Pre-built tools (Search, Code Exec), MCP tools, 3rd-party integrations
-4. **Stateful Agents**: Built-in state management for conversation context
-5. **Production-Ready**: Powers Google production systems, designed for Cloud Run and Vertex AI Agent Engine
-6. **Code-First**: Define agent logic, tools, and orchestration directly in Python
+**Why This Approach?**
+- **Cost-Effective**: Gemini 2.5 Flash is significantly cheaper than Pro
+- **Simpler**: Single agent per mode reduces complexity and debugging difficulty
+- **Faster**: Less orchestration overhead, quicker responses
+- **Easier Deployment**: One service, one deployment, simpler monitoring
+- **Good Enough**: Flash model is sufficient for support chat suggestions and safety checks
 
-**Why ADK for Support Chat AI?**
-- **Stateful Conversation Management**: ADK handles conversation state natively, perfect for multi-turn support chats
-- **Tool Integration**: Can integrate with knowledge bases, CRM systems, order management APIs
-- **Dynamic Orchestration**: LLM-driven routing enables intelligent decision-making for YOLO mode
-- **Production Deployment**: Seamless deployment to Cloud Run (our target platform)
-- **Gemini Integration**: Optimized for Vertex AI Gemini models we're already using
-
-**ADK Architecture for Support Chat AI:**
+**Simplified ADK Architecture:**
 ```
 Support Chat Extension
     ↓ HTTP POST
-FastAPI Backend (Routes Layer)
-    ↓ Call ADK Agents
-ADK Agent Layer
-├── SuggestionAgent (Suggestion Mode)
-│   ├── Tools: ConversationContextTool, PreferencesTool
-│   ├── Model: Gemini 1.5 Flash
-│   └── Output: Suggestion with confidence score
-└── AutonomousAgent (YOLO Mode)
-    ├── Sub-agents: GoalPlannerAgent, SafetyCheckerAgent, ResponseGeneratorAgent
-    ├── Orchestration: Sequential workflow with LLM routing
-    ├── Tools: GoalTrackerTool, EscalationDetectorTool, ContextAnalyzerTool
-    ├── Model: Gemini 1.5 Pro
-    └── Output: Action decision (respond/escalate/complete) + response
+Cloud Run Service (Single Deployment)
+├── FastAPI Layer (Routes + Middleware)
+└── ADK Agents (Same Process)
+    ├── SuggestionAgent
+    │   ├── Model: Gemini 2.5 Flash
+    │   ├── Tools: process_conversation_context()
+    │   └── Output: Suggestion with confidence
+    └── AutonomousAgent
+        ├── Model: Gemini 2.5 Flash (NOT multi-agent)
+        ├── Tools: track_goal(), check_safety()
+        └── Output: Action decision + response
 
-Vertex AI Gemini (underlying model)
+Vertex AI Gemini 2.5 Flash (single model)
 ```
 
 ### API Specification
@@ -72,8 +213,8 @@ Vertex AI Gemini (underlying model)
 
 **Key Endpoints from Spec:**
 1. `GET /health` - Health check (no auth)
-2. `POST /api/suggest-response` - Suggestion Mode (SuggestRequest → SuggestResponse) → **Uses SuggestionAgent**
-3. `POST /api/autonomous-response` - YOLO Mode (AutonomousRequest → AutonomousResponse) → **Uses AutonomousAgent**
+2. `POST /api/suggest-response` - Suggestion Mode (SuggestRequest → SuggestResponse)
+3. `POST /api/autonomous-response` - YOLO Mode (AutonomousRequest → AutonomousResponse)
 4. `POST /api/feedback` - Feedback submission (FeedbackRequest → success)
 5. `GET /api/conversation-logs` - Retrieve logs (query params → ConversationLogMetadata[])
 6. `POST /api/conversation-logs` - Save logs (ConversationLogCreate → success)
@@ -96,8 +237,6 @@ The FastAPI backend skeleton exists at `/backend` with the following structure:
 - ❌ **ADK agents NOT implemented** (new: `app/agents/` directory)
 - ❌ **API routes NOT implemented** (only TODO comments exist)
 - ❌ **Services NOT implemented** (directories empty)
-- ❌ **Vertex AI integration NOT implemented**
-- ❌ **Authentication NOT implemented**
 
 **Extension Status:**
 - ✅ Extension fully built with mock API
@@ -106,91 +245,77 @@ The FastAPI backend skeleton exists at `/backend` with the following structure:
 - ✅ Currently using `mock-api.ts` for all API calls
 - 🔄 Ready to replace mock with real API calls
 
-**Key Files Inspected:**
-1. `/backend/app/main.py` - FastAPI entry point (basic setup only)
-2. `/backend/app/models/request.py` - Request models (SuggestRequest, Message, UserPreferences)
-3. `/backend/app/models/response.py` - Response models (SuggestResponse, Suggestion, Metadata)
-4. `/backend/app/core/config.py` - Pydantic Settings for configuration
-5. `/backend/requirements.txt` - Dependencies including Vertex AI SDK (will add ADK)
-6. `/extension/src/background/api-client.ts` - Extension API client (currently using mock)
-7. `/extension/src/lib/mock-api.ts` - Mock API implementation to be replaced
-8. **`/docs/api-spec.yaml`** - Complete OpenAPI 3.0 specification
-
 ### Current Architecture
 
 **Technology Stack:**
 - **Backend**: FastAPI 0.109.0, Python 3.11+, Uvicorn, Gunicorn
-- **AI Framework**: **Google ADK (Agent Development Kit)** - NEW! 🎉
-- **AI Models**: Google Vertex AI SDK 1.71.0, Gemini 1.5 Pro/Flash
+- **AI Framework**: Google ADK (Agent Development Kit) - Simplified single-agent approach
+- **AI Model**: **Gemini 2.5 Flash ONLY** - Cost-effective and fast
 - **Validation**: Pydantic 2.5.0
 - **GCP Services**: Vertex AI, Secret Manager, Firestore, Cloud Logging
+- **Deployment**: **Single Cloud Run service** (no Agent Engine)
 - **Extension**: TypeScript, Chrome Manifest V3
 - **API Documentation**: OpenAPI 3.0.3
 
-**Backend Structure (Updated with ADK):**
+**Simplified Backend Structure:**
 ```
 backend/app/
-├── main.py                   # FastAPI app entry (✅ basic setup)
-├── agents/                   # ADK agents (❌ TO CREATE - NEW!)
+├── main.py                   # FastAPI app + ADK agent initialization (unified)
+├── agents/                   # ADK agents (simplified)
 │   ├── __init__.py
-│   ├── suggestion_agent.py   # TO CREATE: Suggestion Mode agent
-│   ├── autonomous_agent.py   # TO CREATE: YOLO Mode multi-agent system
-│   ├── tools/                # ADK tools
-│   │   ├── __init__.py
-│   │   ├── context_tool.py   # TO CREATE: Conversation context processing
-│   │   ├── goal_tracker.py   # TO CREATE: Goal state tracking
-│   │   └── safety_checker.py # TO CREATE: Escalation detection
-│   └── orchestration/        # ADK orchestration workflows
+│   ├── suggestion_agent.py   # Single SuggestionAgent with Gemini 2.5 Flash
+│   ├── autonomous_agent.py   # Single AutonomousAgent with Gemini 2.5 Flash
+│   └── tools/                # ADK tool functions (Python functions)
 │       ├── __init__.py
-│       └── yolo_workflow.py  # TO CREATE: Multi-agent YOLO workflow
-├── api/routes/               # API endpoints (❌ empty)
-│   ├── suggest.py            # TO CREATE: POST /api/suggest-response (calls SuggestionAgent)
-│   ├── autonomous.py         # TO CREATE: POST /api/autonomous-response (calls AutonomousAgent)
-│   ├── feedback.py           # TO CREATE: POST /api/feedback
-│   └── logs.py               # TO CREATE: GET/POST /api/conversation-logs
-├── services/                 # Business logic (❌ empty - SIMPLIFIED WITH ADK)
-│   ├── gemini.py             # TO CREATE: Vertex AI integration (via ADK)
-│   ├── prompt_builder.py     # TO CREATE: Prompt engineering (ADK-compatible)
-│   └── analytics.py          # TO CREATE: Track usage metrics
+│       ├── context_tools.py  # process_conversation_context()
+│       ├── goal_tools.py     # track_goal_progress()
+│       └── safety_tools.py   # check_safety_constraints()
+├── api/routes/               # API endpoints
+│   ├── suggest.py            # POST /api/suggest-response
+│   ├── autonomous.py         # POST /api/autonomous-response
+│   ├── feedback.py           # POST /api/feedback
+│   └── logs.py               # GET/POST /api/conversation-logs
+├── services/                 # Business logic (thin layer)
+│   └── agent_service.py      # Coordinates agents (no separate gemini.py)
 ├── models/                   # Data models (✅ complete)
 │   ├── request.py            # SuggestRequest, Message, UserPreferences
 │   └── response.py           # SuggestResponse, Suggestion, Metadata
-└── core/                     # Core utilities (✅ config only)
+└── core/                     # Core utilities
     ├── config.py             # Settings management
-    ├── security.py           # TO CREATE: Auth & rate limiting
-    └── database.py           # TO CREATE: Firestore client
+    ├── security.py           # Auth & rate limiting
+    └── database.py           # Firestore client
 ```
 
-**Documentation Structure:**
-```
-docs/
-└── api-spec.yaml             # ✅ OpenAPI 3.0 specification (919 lines)
-```
+**Key Simplifications:**
+- ❌ No multi-agent orchestration - each mode uses ONE agent
+- ❌ No separate service layers - agents called directly from routes
+- ❌ No Agent Engine deployment - Cloud Run only
+- ✅ All agents use Gemini 2.5 Flash (cost-effective)
+- ✅ FastAPI + ADK in same process (no separation)
 
 ### Dependencies & Integration Points
 
 **Required GCP Services:**
-1. **Vertex AI** - Gemini 1.5 Pro/Flash for response generation (via ADK)
+1. **Vertex AI** - Gemini 2.5 Flash for response generation (via ADK)
 2. **Secret Manager** - Store API keys securely
 3. **Firestore** - Store conversation logs and analytics
 4. **Cloud Logging** - Application logs
 5. **Artifact Registry** - Docker image storage
-6. **Cloud Run** - Serverless deployment (ADK-optimized)
-7. **Vertex AI Agent Engine** - (Optional) For scaled ADK agent deployment
+6. **Cloud Run** - Serverless deployment (unified service)
 
-**Integration Flow (with ADK):**
+**Integration Flow (Simplified):**
 ```
 Extension (Content Script)
     ↓ chrome.runtime.sendMessage()
 Background Service Worker (api-client.ts)
     ↓ HTTP POST (fetch/axios)
-Cloud Run Backend (FastAPI)
-    ↓ Route to ADK Agent
-ADK Agent Layer (SuggestionAgent / AutonomousAgent)
+Cloud Run Service (FastAPI + ADK in same process)
+    ↓ Route → Agent (direct call, no layering)
+ADK Agent (SuggestionAgent OR AutonomousAgent)
     ↓ LLM call with tools
-Vertex AI Gemini 1.5 Pro/Flash
+Vertex AI Gemini 2.5 Flash
     ↓ response
-ADK Agent (post-processing, safety checks)
+ADK Agent (post-processing)
     ↓ structured output
 FastAPI Route
     ↓ JSON response (per OpenAPI spec)
@@ -204,14 +329,11 @@ GCP_PROJECT_ID=your-project-id
 GCP_REGION=us-central1
 VERTEX_AI_LOCATION=us-central1
 
-# Model Configuration
-GEMINI_MODEL=gemini-1.5-pro  # or gemini-1.5-flash
-GEMINI_FLASH_MODEL=gemini-1.5-flash  # for Suggestion Mode
-GEMINI_PRO_MODEL=gemini-1.5-pro      # for YOLO Mode
+# Model Configuration (SIMPLIFIED)
+GEMINI_MODEL=gemini-2.5-flash  # Single model for everything
 
-# ADK Configuration (NEW!)
-ADK_AGENT_DEPLOYMENT=cloud-run  # or vertex-ai-agent-engine
-ADK_ENABLE_TRACING=true         # for debugging
+# ADK Configuration
+ADK_ENABLE_TRACING=true  # for debugging
 ADK_LOG_LEVEL=INFO
 
 # Security
@@ -233,79 +355,44 @@ DEBUG=false
 
 ### Considerations & Challenges
 
-**1. ADK Integration Strategy**
-- **Challenge**: ADK is a new framework, need to design agent architecture carefully
+**1. Single Model Strategy**
+- **Challenge**: Using only Gemini 2.5 Flash for everything
+- **Solution**: Flash is fast and cost-effective, sufficient for support chat
+- **Benefit**: Simpler configuration, lower costs, consistent performance
+
+**2. No Multi-Agent Complexity**
+- **Challenge**: YOLO mode safety without multi-agent orchestration
+- **Solution**: Single agent with multiple tool calls in sequence
+- **Benefit**: Easier to debug, faster responses, simpler deployment
+
+**3. Unified Service Deployment**
+- **Challenge**: FastAPI + ADK in same process
+- **Solution**: Initialize agents on app startup, reuse across requests
+- **Benefit**: No network overhead, simpler architecture, easier monitoring
+
+**4. Cost Optimization**
+- **Challenge**: Keep costs low
 - **Solution**:
-  - Start with simple SuggestionAgent (single agent)
-  - Build AutonomousAgent as multi-agent system (GoalPlanner → SafetyChecker → ResponseGenerator)
-  - Use ADK's Sequential workflow for predictable pipelines
-  - Use LLM-driven routing for dynamic YOLO mode decisions
-- **Benefit**: ADK handles state management, tool calling, and orchestration automatically
+  - Gemini 2.5 Flash is 10x cheaper than Pro
+  - Single model = predictable costs
+  - Cloud Run auto-scaling prevents waste
+  - Response caching for common queries
 
-**2. Vertex AI Authentication (via ADK)**
-- **Challenge**: Service account credentials needed for Cloud Run
-- **Solution**: ADK integrates with Vertex AI automatically using workload identity
-- **Required IAM Roles**: `roles/aiplatform.user`
-
-**3. CORS for Chrome Extension**
-- **Challenge**: Extension ID unknown until first build
-- **Solution**: Use wildcard for dev, specific ID for production
-- **Pattern**: `chrome-extension://[a-z]{32}`
-
-**4. Rate Limiting**
-- **Challenge**: Prevent abuse from extension
-- **Solution**: Implement per-IP or per-API-key rate limiting (60/min per OpenAPI spec)
-- **Library**: Use `slowapi` or custom middleware
-
-**5. Cost Optimization (with ADK)**
-- **Challenge**: Gemini API costs per request
-- **Solution**:
-  - Use Gemini 1.5 Flash (cheaper) for Suggestion Mode via ADK
-  - Use Gemini 1.5 Pro for YOLO Mode (higher accuracy needed) via ADK
-  - Implement response caching for common queries (ADK supports caching)
-  - Use ADK's token optimization features
-
-**6. Latency Requirements (ADK Performance)**
+**5. Latency Requirements**
 - **Challenge**: Users expect <2 second responses
 - **Solution**:
-  - Use Cloud Run min instances = 1 to avoid cold starts
-  - ADK is optimized for production latency
-  - Implement streaming responses using ADK (optional)
+  - Flash model is faster than Pro
+  - No multi-agent overhead
+  - Cloud Run min instances = 1 (avoid cold starts)
   - Monitor P95 latency
 
-**7. Privacy & Data Retention**
-- **Challenge**: Customer data must not be stored permanently
-- **Solution**:
-  - Process conversation context in-memory only (ADK stateful agents)
-  - Store only metadata in Firestore (no customer messages)
-  - Implement TTL (7 days) for analytics
-  - ADK state is ephemeral by default
-
-**8. YOLO Mode Safety (ADK Multi-Agent Orchestration)**
+**6. YOLO Mode Safety (Simplified)**
 - **Challenge**: Autonomous responses require safety checks
 - **Solution**:
-  - Implement SafetyCheckerAgent as part of AutonomousAgent workflow
-  - Use ADK's Sequential orchestration: GoalPlanner → SafetyChecker → ResponseGenerator
+  - Single agent with `check_safety()` and `track_goal()` tools
+  - Agent calls tools sequentially: analyze → check_safety → respond/escalate
+  - All safety logic in tools (testable and reusable)
   - Confidence threshold checks (min 0.7 per OpenAPI spec)
-  - Keyword-based escalation detection via SafetyCheckerAgent
-  - Maximum conversation turn limits enforced by GoalTrackerTool
-  - All safety logic in backend ADK agents for consistency
-
-**9. OpenAPI Compliance**
-- **Challenge**: Ensure implementation exactly matches OpenAPI specification
-- **Solution**:
-  - Use `docs/api-spec.yaml` as source of truth for all endpoints
-  - Validate request/response schemas against spec
-  - Use FastAPI's automatic OpenAPI generation and compare with spec
-  - Test all endpoints against spec examples
-
-**10. ADK Agent Testing**
-- **Challenge**: Testing multi-agent systems is complex
-- **Solution**:
-  - ADK provides built-in testing utilities
-  - Mock ADK tools for unit tests
-  - Integration tests with test Gemini model
-  - E2E tests with full agent workflows
 
 ## 📝 Implementation Plan
 
@@ -348,424 +435,380 @@ DEBUG=false
 
 3. **Install Google ADK and Additional Dependencies**
    ```bash
-   # Add to requirements.txt
    pip install google-adk  # Google Agent Development Kit
    pip install slowapi  # Rate limiting
-   pip install prometheus-client  # Metrics
+   pip install google-cloud-firestore  # Firestore
+   pip install google-cloud-secret-manager  # Secret Manager
    ```
 
 ### Step-by-Step Implementation
 
-#### **Phase 0: ADK Setup & Architecture Design (1-2 hours) - NEW!**
+#### **Phase 0: ADK Setup & Architecture Design (30 mins - SIMPLIFIED) - ✅ COMPLETE**
 
-**Step 0.1: Install and Configure Google ADK**
-- Files to modify: `backend/requirements.txt`
-- Changes needed:
+**⚠️ SIMPLIFIED ARCHITECTURE**
+This plan uses a simplified single-agent approach:
+- ✅ Single Model: Gemini 2.5 Flash for ALL operations
+- ✅ Single Agent per Mode: No multi-agent orchestration
+- ✅ Unified Service: FastAPI + ADK in one Cloud Run deployment
+- ✅ Correct ADK API: `from google.adk.agents import Agent`
+
+**Step 0.1: Install and Configure Google ADK** - ✅ COMPLETE
+- Files modified: `backend/requirements.txt`
+- Changes made:
   ```txt
-  # Add to requirements.txt
-  google-adk>=0.1.0  # Agent Development Kit
-  litellm>=1.0.0     # For multi-model support (ADK dependency)
+  # Added to requirements.txt
+  google-adk  # Agent Development Kit
+  slowapi     # Rate limiting
   ```
-- Installation:
-  ```bash
-  pip install google-adk litellm
-  ```
-- Verification:
-  ```python
-  # Test ADK installation
-  from adk import Agent, Tool
-  print("ADK installed successfully!")
-  ```
+- Installation: ✅ Successfully installed with pip
+- Verification: ✅ Confirmed working: `from google.adk.agents import Agent`
+- Environment: ✅ `.env` file created with GCP configuration
 
-**Step 0.2: Design ADK Agent Architecture**
+**Step 0.2: Design Simplified Agent Architecture** - ✅ COMPLETE
 - **Reference**: ADK documentation, OpenAPI spec requirements
-- **Agent Design**:
+- **Agent Design** (IMPLEMENTED):
 
   **SuggestionAgent (Suggestion Mode)**:
   ```python
-  SuggestionAgent
-  ├── Model: Gemini 1.5 Flash
-  ├── State: ConversationState (messages, preferences)
-  ├── Tools:
-  │   ├── ConversationContextTool (extract context)
-  │   └── PreferencesTool (apply tone, length, language)
+  SuggestionAgent (Single Agent)
+  ├── Model: Gemini 2.5 Flash
+  ├── Tools: process_conversation_context()
   └── Output: Suggestion (text, confidence)
   ```
 
-  **AutonomousAgent (YOLO Mode - Multi-Agent System)**:
+  **AutonomousAgent (YOLO Mode)**:
   ```python
-  AutonomousAgent (Orchestrator)
-  ├── Orchestration: Sequential Workflow
-  ├── Sub-Agents:
-  │   ├── GoalPlannerAgent
-  │   │   ├── Input: Goal, ConversationState
-  │   │   ├── Output: Action plan
-  │   │   └── Model: Gemini 1.5 Pro
-  │   ├── SafetyCheckerAgent
-  │   │   ├── Input: Action plan, SafetyConstraints
-  │   │   ├── Output: Safety decision (safe/escalate)
-  │   │   └── Tools: EscalationDetectorTool, ConfidenceCalculatorTool
-  │   └── ResponseGeneratorAgent
-  │       ├── Input: Action plan (if safe)
-  │       ├── Output: Response text
-  │       └── Model: Gemini 1.5 Pro
+  AutonomousAgent (Single Agent, NOT multi-agent)
+  ├── Model: Gemini 2.5 Flash
   ├── Tools:
-  │   ├── GoalTrackerTool (track progress, turn count)
-  │   ├── EscalationDetectorTool (keywords, sentiment)
-  │   └── ContextAnalyzerTool (intent detection)
-  └── Final Output: AutonomousResponse (action, response_text, updated_state)
+  │   ├── track_goal_progress()
+  │   ├── check_safety_constraints()
+  │   └── process_conversation_context()
+  └── Output: AutonomousResponse (action, response_text, updated_state)
+
+  NOTE: Single agent with tools, no sub-agents or orchestration
   ```
 
-**Step 0.3: Create ADK Project Structure**
-- Files to create:
+**Step 0.3: Create Project Structure** - ✅ COMPLETE
+- Files created:
   ```bash
-  mkdir -p backend/app/agents/tools
-  mkdir -p backend/app/agents/orchestration
-  touch backend/app/agents/__init__.py
-  touch backend/app/agents/suggestion_agent.py
-  touch backend/app/agents/autonomous_agent.py
-  touch backend/app/agents/tools/__init__.py
-  touch backend/app/agents/tools/context_tool.py
-  touch backend/app/agents/tools/goal_tracker.py
-  touch backend/app/agents/tools/safety_checker.py
-  touch backend/app/agents/orchestration/__init__.py
-  touch backend/app/agents/orchestration/yolo_workflow.py
+  ✅ backend/app/agents/__init__.py
+  ✅ backend/app/agents/suggestion_agent.py
+  ✅ backend/app/agents/autonomous_agent.py
+  ✅ backend/app/agents/tools/__init__.py
+  ✅ backend/app/agents/tools/context_tools.py
+  ✅ backend/app/agents/tools/goal_tools.py
+  ✅ backend/app/agents/tools/safety_tools.py
+  ✅ backend/app/api/routes/__init__.py
+  ✅ backend/app/api/routes/suggest.py
+  ✅ backend/app/api/routes/autonomous.py
+  ✅ backend/app/api/routes/feedback.py
+  ✅ backend/app/api/routes/conversation_logs.py
+  ✅ backend/app/services/agent_service.py
   ```
 
-#### **Phase 1: Core Backend Services with ADK (3-4 hours)**
+#### **Phase 1: Core Backend with ADK (2-3 hours) - ✅ COMPLETE**
 
-**Step 1: Implement ADK Tools**
+**Step 1: Implement ADK Tool Functions** - ✅ COMPLETE
 
-**Step 1.1: Create ConversationContextTool**
-- Files to create: `backend/app/agents/tools/context_tool.py`
-- **Reference**: ADK Tool interface, OpenAPI Message schema
-- Changes needed:
+**Step 1.1: Create conversation context tool** - ✅ COMPLETE
+- Files created: `backend/app/agents/tools/context_tools.py`
+- Implementation status: ✅ Fully implemented
   ```python
-  from adk import Tool
   from typing import List, Dict
-  from app.models.request import Message
+  import re
 
-  class ConversationContextTool(Tool):
-      """ADK Tool for processing conversation context"""
+  def process_conversation_context(messages: List[Dict]) -> Dict:
+      """
+      Process conversation context (ADK tool function)
 
-      name = "conversation_context"
-      description = "Extracts and processes conversation context from messages"
+      Args:
+          messages: List of message dicts with role, content, timestamp
 
-      def run(self, messages: List[Message]) -> Dict:
-          """
-          Process conversation context
-          - Validate messages (minItems: 1, maxItems: 50 per OpenAPI spec)
-          - Clean and sanitize messages
-          - Extract key entities (order numbers, emails)
-          - Detect conversation intent
-          """
-          # Implementation
+      Returns:
+          Dict with processed_messages, intent, and extracted entities
+      """
+      if not messages or len(messages) > 50:
+          return {"error": "Invalid message count"}
+
+      processed = []
+      entities = {"order_numbers": [], "emails": []}
+
+      for msg in messages:
+          content = msg.get("content", "").strip()
+          processed.append({
+              "role": msg.get("role"),
+              "content": content,
+              "timestamp": msg.get("timestamp")
+          })
+
+          # Extract entities
+          entities["order_numbers"].extend(re.findall(r'#\d+', content))
+          entities["emails"].extend(re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', content))
+
+      # Detect intent
+      all_content = " ".join([m["content"] for m in processed]).lower()
+      intent = "general_inquiry"
+      if any(w in all_content for w in ["order", "shipping", "delivery"]):
+          intent = "order_inquiry"
+      elif any(w in all_content for w in ["refund", "return", "cancel"]):
+          intent = "refund_request"
+
+      return {
+          "processed_messages": processed,
+          "intent": intent,
+          "entities": entities
+      }
+  ```
+
+**Step 1.2: Create goal tracking tool** - ✅ COMPLETE
+- Files created: `backend/app/agents/tools/goal_tools.py`
+- Implementation status: ✅ Fully implemented
+  ```python
+  from typing import Dict
+
+  def track_goal_progress(goal: Dict, current_state: Dict, latest_action: str) -> Dict:
+      """Track YOLO goal progress (ADK tool function)"""
+      new_turn = current_state.get("current_turn", 0) + 1
+      max_turns = goal.get("max_turns", 10)
+
+      base_progress = min(new_turn / max_turns, 0.9)
+
+      if "resolved" in latest_action.lower():
+          progress = 1.0
+      else:
+          progress = base_progress
+
+      return {
+          "active": progress < 1.0 and new_turn < max_turns,
+          "current_turn": new_turn,
+          "progress": round(progress, 2)
+      }
+  ```
+
+**Step 1.3: Create safety checking tool** - ✅ COMPLETE
+- Files created: `backend/app/agents/tools/safety_tools.py`
+- Implementation status: ✅ Fully implemented
+  ```python
+  from typing import Dict
+
+  def check_safety_constraints(message: str, constraints: Dict, confidence: float) -> Dict:
+      """Check safety constraints for escalation (ADK tool function)"""
+      triggers = []
+      message_lower = message.lower()
+
+      # Check escalation keywords
+      for keyword in constraints.get("escalation_keywords", []):
+          if keyword.lower() in message_lower:
+              triggers.append(f"escalation_keyword:{keyword}")
+
+      # Check confidence threshold
+      min_confidence = constraints.get("min_confidence", 0.7)
+      if confidence < min_confidence:
+          triggers.append(f"low_confidence:{confidence:.2f}")
+
+      # Check confusion
+      if constraints.get("stop_if_confused", True):
+          if any(p in message_lower for p in ["i don't understand", "i'm not sure"]):
+              triggers.append("confusion_detected")
+
+      if triggers:
           return {
-              "processed_messages": [...],
-              "intent": "...",
-              "entities": {...}
+              "decision": "escalate",
+              "reason": f"Safety violations: {', '.join(triggers)}",
+              "triggers": triggers
+          }
+      else:
+          return {
+              "decision": "safe",
+              "reason": "All checks passed",
+              "triggers": []
           }
   ```
 
-**Step 1.2: Create GoalTrackerTool**
-- Files to create: `backend/app/agents/tools/goal_tracker.py`
-- **Reference**: ADK Tool interface, OpenAPI GoalState schema
-- Changes needed:
+**Step 2: Implement SuggestionAgent (Single Agent)** - ✅ COMPLETE
+- Files created: `backend/app/agents/suggestion_agent.py`
+- Implementation status: ✅ Implemented with placeholder responses
+- **TODO**: Replace placeholder with actual `agent.run()` call
   ```python
-  from adk import Tool
-  from app.models.request import Goal, GoalState
-
-  class GoalTrackerTool(Tool):
-      """ADK Tool for tracking YOLO goal progress"""
-
-      name = "goal_tracker"
-      description = "Tracks goal progress and turn count for autonomous mode"
-
-      def run(self, goal: Goal, current_state: GoalState, latest_action: str) -> GoalState:
-          """
-          Update goal state
-          - Increment current_turn
-          - Calculate progress (0.0-1.0)
-          - Check if max_turns reached
-          - Determine if goal is complete
-          """
-          # Implementation
-          return GoalState(...)
-  ```
-
-**Step 1.3: Create SafetyCheckerTool**
-- Files to create: `backend/app/agents/tools/safety_checker.py`
-- **Reference**: ADK Tool interface, OpenAPI SafetyConstraints schema
-- Changes needed:
-  ```python
-  from adk import Tool
-  from app.models.request import SafetyConstraints
-
-  class SafetyCheckerTool(Tool):
-      """ADK Tool for escalation detection and safety checks"""
-
-      name = "safety_checker"
-      description = "Detects escalation triggers and safety violations"
-
-      def run(self,
-              message: str,
-              constraints: SafetyConstraints,
-              confidence: float) -> Dict:
-          """
-          Check safety constraints
-          - Check escalation_keywords array
-          - Validate min_confidence threshold (0.0-1.0, default 0.7)
-          - Detect negative sentiment
-          - Return escalation decision (safe/escalate) + reason
-          """
-          # Implementation
-          return {
-              "decision": "safe" | "escalate",
-              "reason": "...",
-              "triggers": [...]
-          }
-  ```
-
-**Step 2: Implement SuggestionAgent (Suggestion Mode)**
-- Files to create: `backend/app/agents/suggestion_agent.py`
-- **Reference**: ADK Agent interface, OpenAPI SuggestRequest/SuggestResponse schemas
-- Changes needed:
-  ```python
-  from adk import Agent
-  from vertexai.generative_models import GenerativeModel
-  from app.agents.tools.context_tool import ConversationContextTool
-  from app.models.request import SuggestRequest, UserPreferences
+  from google.adk.agents import Agent
+  from app.agents.tools.context_tools import process_conversation_context
+  from app.models.request import SuggestRequest
   from app.models.response import Suggestion
+  import os
 
-  class SuggestionAgent(Agent):
-      """ADK Agent for Suggestion Mode"""
+  class SuggestionAgentService:
+      """Single-agent service for Suggestion Mode (Gemini 2.5 Flash)"""
 
       def __init__(self, project_id: str, location: str):
-          super().__init__(
+          os.environ["GOOGLE_CLOUD_PROJECT"] = project_id
+          os.environ["GOOGLE_CLOUD_REGION"] = location
+
+          # Single agent with Gemini 2.5 Flash
+          self.agent = Agent(
               name="suggestion_agent",
-              model=GenerativeModel("gemini-1.5-flash"),  # Per OpenAPI spec
-              tools=[ConversationContextTool()],
-              project_id=project_id,
-              location=location
+              model="gemini-2.5-flash",
+              instruction="""You are an AI assistant helping customer support agents.
+              Generate helpful, empathetic response suggestions.
+              Maintain a professional yet friendly tone.""",
+              description="Generates response suggestions for support agents",
+              tools=[process_conversation_context]
           )
 
       async def generate_suggestion(self, request: SuggestRequest) -> Suggestion:
-          """
-          Generate suggestion with ADK
-          1. Use ConversationContextTool to process context
-          2. Build prompt with user preferences (tone, length, language)
-          3. Call Gemini 1.5 Flash via ADK
-          4. Calculate confidence score (0.0-1.0)
-          5. Return Suggestion object
-          """
-          # ADK handles state management and tool calling
-          context = await self.use_tool("conversation_context", request.conversation_context)
+          """Generate suggestion with single ADK agent"""
+          # Build prompt
+          messages_text = "\n".join([
+              f"{msg.role.upper()}: {msg.content}"
+              for msg in request.conversation_context
+          ])
 
-          prompt = self._build_prompt(context, request.user_preferences)
-          response = await self.generate_content(prompt)
+          prefs = request.user_preferences or {}
+          prompt = f"""Generate a {prefs.get('tone', 'professional')} customer support response.
+
+Conversation:
+{messages_text}
+
+Requirements:
+- Tone: {prefs.get('tone', 'professional')}
+- Length: {prefs.get('length', 'medium')}
+- Language: {prefs.get('language', 'en')}
+
+Provide a helpful response."""
+
+          # TODO: Actual ADK agent invocation
+          # response = await self.agent.run(prompt)
+          response_text = "[ADK Agent Response]"
 
           return Suggestion(
-              text=response.text,
-              confidence=self._calculate_confidence(response),
-              reasoning="..."
+              text=response_text,
+              confidence=0.85,
+              reasoning="Generated with Gemini 2.5 Flash"
           )
-
-      def _build_prompt(self, context: Dict, prefs: UserPreferences) -> str:
-          """Build prompt with preferences (tone, length, language, always_include_greeting)"""
-          # Implementation
-          pass
-
-      def _calculate_confidence(self, response) -> float:
-          """Heuristic confidence score (0.0-1.0 per OpenAPI spec)"""
-          # Implementation
-          pass
   ```
 
-**Step 3: Implement AutonomousAgent (YOLO Mode - Multi-Agent)**
-- Files to create: `backend/app/agents/autonomous_agent.py`
-- **Reference**: ADK multi-agent orchestration, OpenAPI AutonomousRequest/AutonomousResponse schemas
-- Changes needed:
+**Step 3: Implement AutonomousAgent (Single Agent)** - ✅ COMPLETE
+- Files created: `backend/app/agents/autonomous_agent.py`
+- Implementation status: ✅ Implemented with placeholder responses
+- **TODO**: Replace placeholder with actual `agent.run()` call
   ```python
-  from adk import Agent, SequentialWorkflow
-  from vertexai.generative_models import GenerativeModel
-  from app.agents.tools.goal_tracker import GoalTrackerTool
-  from app.agents.tools.safety_checker import SafetyCheckerTool
-  from app.models.request import AutonomousRequest, Goal, GoalState, SafetyConstraints
+  from google.adk.agents import Agent
+  from app.agents.tools.goal_tools import track_goal_progress
+  from app.agents.tools.safety_tools import check_safety_constraints
+  from app.models.request import AutonomousRequest, GoalState
   from app.models.response import AutonomousResponse
+  import os
+  import time
+  import uuid
 
-  class GoalPlannerAgent(Agent):
-      """Sub-agent: Plans action based on goal"""
-      def __init__(self, project_id: str, location: str):
-          super().__init__(
-              name="goal_planner",
-              model=GenerativeModel("gemini-1.5-pro"),  # Per OpenAPI spec
-              tools=[GoalTrackerTool()],
-              project_id=project_id,
-              location=location
-          )
-
-  class SafetyCheckerAgent(Agent):
-      """Sub-agent: Checks safety constraints"""
-      def __init__(self, project_id: str, location: str):
-          super().__init__(
-              name="safety_checker",
-              model=GenerativeModel("gemini-1.5-pro"),
-              tools=[SafetyCheckerTool()],
-              project_id=project_id,
-              location=location
-          )
-
-  class ResponseGeneratorAgent(Agent):
-      """Sub-agent: Generates response if safe"""
-      def __init__(self, project_id: str, location: str):
-          super().__init__(
-              name="response_generator",
-              model=GenerativeModel("gemini-1.5-pro"),
-              tools=[],
-              project_id=project_id,
-              location=location
-          )
-
-  class AutonomousAgent:
-      """Main orchestrator for YOLO Mode using ADK multi-agent workflow"""
+  class AutonomousAgentService:
+      """Single-agent service for YOLO Mode (Gemini 2.5 Flash)"""
 
       def __init__(self, project_id: str, location: str):
-          self.goal_planner = GoalPlannerAgent(project_id, location)
-          self.safety_checker = SafetyCheckerAgent(project_id, location)
-          self.response_generator = ResponseGeneratorAgent(project_id, location)
+          os.environ["GOOGLE_CLOUD_PROJECT"] = project_id
+          os.environ["GOOGLE_CLOUD_REGION"] = location
 
-          # ADK Sequential Workflow
-          self.workflow = SequentialWorkflow(
-              agents=[
-                  self.goal_planner,
-                  self.safety_checker,
-                  self.response_generator
-              ]
+          # Single agent with Gemini 2.5 Flash and safety tools
+          self.agent = Agent(
+              name="autonomous_agent",
+              model="gemini-2.5-flash",
+              instruction="""You are an autonomous customer support agent.
+              Analyze the goal, check safety constraints, and decide the next action.
+              Use tools to track progress and validate safety before responding.""",
+              description="Handles autonomous YOLO mode responses",
+              tools=[track_goal_progress, check_safety_constraints]
           )
 
       async def process(self, request: AutonomousRequest) -> AutonomousResponse:
-          """
-          Process autonomous request with multi-agent workflow
-          1. GoalPlannerAgent: Analyze goal and plan action
-          2. SafetyCheckerAgent: Check safety constraints
-          3. ResponseGeneratorAgent: Generate response (if safe)
-          4. Return AutonomousResponse with action decision
-          """
-          # Step 1: Goal Planning
-          action_plan = await self.goal_planner.run({
-              "goal": request.goal,
-              "context": request.conversation_context,
-              "state": request.goal_state
-          })
+          """Process autonomous request with single agent"""
+          # Build prompt with goal and safety context
+          messages_text = "\n".join([
+              f"{msg.role.upper()}: {msg.content}"
+              for msg in request.conversation_context
+          ])
 
-          # Step 2: Safety Check
-          safety_result = await self.safety_checker.run({
-              "action_plan": action_plan,
-              "constraints": request.safety_constraints,
-              "confidence": action_plan.get("confidence", 0.5)
-          })
+          prompt = f"""Autonomous support task:
 
-          # Step 3: Determine Action
-          if safety_result["decision"] == "escalate":
-              return AutonomousResponse(
-                  action="escalate",
-                  response_text=None,
-                  updated_state=self._update_state(request.goal_state),
-                  reasoning=safety_result["reason"],
-                  confidence=safety_result.get("confidence", 0.0),
-                  metadata=self._generate_metadata()
-              )
+Goal: {request.goal.description} (Max turns: {request.goal.max_turns})
+Current Turn: {request.goal_state.current_turn}/{request.goal.max_turns}
+Progress: {request.goal_state.progress:.1%}
 
-          # Step 4: Generate Response
-          if action_plan.get("goal_complete"):
-              return AutonomousResponse(
-                  action="goal_complete",
-                  response_text=action_plan["final_message"],
-                  updated_state=self._complete_state(request.goal_state),
-                  reasoning="Goal achieved",
-                  confidence=action_plan["confidence"],
-                  metadata=self._generate_metadata()
-              )
+Safety Constraints:
+- Min confidence: {request.safety_constraints.min_confidence}
+- Escalation keywords: {', '.join(request.safety_constraints.escalation_keywords)}
 
-          response = await self.response_generator.run({
-              "action_plan": action_plan,
-              "context": request.conversation_context
-          })
+Conversation:
+{messages_text}
 
+Decide: respond, escalate, or goal_complete"""
+
+          # TODO: Actual ADK agent invocation with tool calls
+          # The agent will:
+          # 1. Call track_goal_progress() to update state
+          # 2. Generate response
+          # 3. Call check_safety_constraints() to validate
+          # 4. Return action decision
+
+          # Placeholder response
           return AutonomousResponse(
               action="respond",
-              response_text=response.text,
-              updated_state=self._update_state(request.goal_state),
-              reasoning=response.reasoning,
-              confidence=response.confidence,
-              metadata=self._generate_metadata()
+              response_text="[ADK Agent Response]",
+              updated_state=GoalState(
+                  active=True,
+                  current_turn=request.goal_state.current_turn + 1,
+                  progress=min(request.goal_state.progress + 0.2, 1.0)
+              ),
+              reasoning="Decision based on goal and safety analysis",
+              confidence=0.8,
+              metadata={
+                  "request_id": str(uuid.uuid4()),
+                  "processing_time_ms": 1500,
+                  "model_used": "gemini-2.5-flash",
+                  "timestamp": int(time.time())
+              }
           )
-
-      def _update_state(self, state: GoalState) -> GoalState:
-          """Update goal state (increment turn, update progress)"""
-          pass
-
-      def _complete_state(self, state: GoalState) -> GoalState:
-          """Mark goal as complete"""
-          pass
-
-      def _generate_metadata(self) -> Dict:
-          """Generate metadata (request_id, processing_time_ms, model_used, timestamp)"""
-          pass
   ```
 
-**Step 4: Implement Gemini Service (ADK-Compatible)**
-- Files to create: `backend/app/services/gemini.py`
-- **Reference**: ADK Vertex AI integration, OpenAPI Metadata schema
-- Changes needed:
+**Step 4: Create Unified Agent Service Layer** - ✅ COMPLETE
+- Files created: `backend/app/services/agent_service.py`
+- Implementation status: ✅ Fully implemented and tested
   ```python
-  import vertexai
-  from vertexai.generative_models import GenerativeModel
   from app.core.config import settings
-  from app.agents.suggestion_agent import SuggestionAgent
-  from app.agents.autonomous_agent import AutonomousAgent
+  from app.agents.suggestion_agent import SuggestionAgentService
+  from app.agents.autonomous_agent import AutonomousAgentService
 
-  class GeminiService:
-      """Vertex AI Gemini service (ADK-compatible)"""
+  class AgentService:
+      """Unified service coordinating both ADK agents"""
 
       def __init__(self):
-          vertexai.init(
-              project=settings.GCP_PROJECT_ID,
-              location=settings.VERTEX_AI_LOCATION
-          )
-
-          # Initialize ADK agents
-          self.suggestion_agent = SuggestionAgent(
+          self.suggestion_agent = SuggestionAgentService(
               project_id=settings.GCP_PROJECT_ID,
               location=settings.VERTEX_AI_LOCATION
           )
 
-          self.autonomous_agent = AutonomousAgent(
+          self.autonomous_agent = AutonomousAgentService(
               project_id=settings.GCP_PROJECT_ID,
               location=settings.VERTEX_AI_LOCATION
           )
 
-      async def generate_suggestion(self, request: SuggestRequest) -> Suggestion:
-          """Generate suggestion using SuggestionAgent"""
+      async def generate_suggestion(self, request):
           return await self.suggestion_agent.generate_suggestion(request)
 
-      async def generate_autonomous_response(self, request: AutonomousRequest) -> AutonomousResponse:
-          """Generate autonomous response using AutonomousAgent"""
+      async def generate_autonomous_response(self, request):
           return await self.autonomous_agent.process(request)
   ```
 
-#### **Phase 2: API Endpoints (2-3 hours)**
+#### **Phase 2: API Endpoints (1-2 hours) - ✅ COMPLETE**
 
-**Step 5: Create Suggestion Mode API Endpoint**
-- Files to create: `backend/app/api/routes/suggest.py`
-- **Reference**: OpenAPI spec `/api/suggest-response` endpoint definition
-- **Must match**: SuggestRequest schema (input), SuggestResponse schema (output)
-- Changes needed:
+**Step 5: Create Suggestion Mode API Endpoint** - ✅ COMPLETE
+- Files created: `backend/app/api/routes/suggest.py`
+- Implementation status: ✅ Fully implemented and tested
+- Test result: ✅ 200 OK - Returns suggestions with metadata
   ```python
   from fastapi import APIRouter, Depends, HTTPException
   from app.models.request import SuggestRequest
-  from app.models.response import SuggestResponse, Suggestion, Metadata
-  from app.services.gemini import GeminiService
+  from app.models.response import SuggestResponse, Metadata
+  from app.services.agent_service import AgentService
   import time
   import uuid
 
@@ -774,20 +817,13 @@ DEBUG=false
   @router.post("/suggest-response", response_model=SuggestResponse)
   async def suggest_response(
       request: SuggestRequest,
-      gemini_service: GeminiService = Depends()
+      agent_service: AgentService = Depends()
   ):
-      """
-      Generate suggestion using ADK SuggestionAgent
-      1. Validate request (Pydantic auto-validates against SuggestRequest schema)
-      2. Call GeminiService.generate_suggestion() → uses ADK SuggestionAgent
-      3. Return SuggestResponse with metadata
-      """
+      """Generate suggestion using single ADK agent"""
       start_time = time.time()
 
       try:
-          # Call ADK SuggestionAgent
-          suggestion = await gemini_service.generate_suggestion(request)
-
+          suggestion = await agent_service.generate_suggestion(request)
           processing_time = int((time.time() - start_time) * 1000)
 
           return SuggestResponse(
@@ -795,304 +831,129 @@ DEBUG=false
               metadata=Metadata(
                   request_id=str(uuid.uuid4()),
                   processing_time_ms=processing_time,
-                  model_used="gemini-1.5-flash",  # Per OpenAPI spec
+                  model_used="gemini-2.5-flash",
                   timestamp=int(time.time())
               )
           )
       except Exception as e:
-          # Error handling per OpenAPI spec
-          raise HTTPException(status_code=503, detail="Vertex AI unavailable")
+          raise HTTPException(status_code=503, detail="AI service unavailable")
   ```
 
-**Step 6: Create Autonomous Mode API Endpoint**
-- Files to create: `backend/app/api/routes/autonomous.py`
-- **Reference**: OpenAPI spec `/api/autonomous-response` endpoint definition
-- **Must match**: AutonomousRequest schema (input), AutonomousResponse schema (output)
-- Changes needed:
+**Step 6: Create Autonomous Mode API Endpoint** - ✅ COMPLETE
+- Files created: `backend/app/api/routes/autonomous.py`
+- Implementation status: ✅ Fully implemented and tested
+- Test result: ✅ 200 OK - Returns action decision with updated state
   ```python
   from fastapi import APIRouter, Depends, HTTPException
   from app.models.request import AutonomousRequest
   from app.models.response import AutonomousResponse
-  from app.services.gemini import GeminiService
+  from app.services.agent_service import AgentService
 
   router = APIRouter()
 
   @router.post("/autonomous-response", response_model=AutonomousResponse)
   async def autonomous_response(
       request: AutonomousRequest,
-      gemini_service: GeminiService = Depends()
+      agent_service: AgentService = Depends()
   ):
-      """
-      Generate autonomous response using ADK AutonomousAgent (multi-agent)
-      1. Validate request and goal state (auto-validated by Pydantic)
-      2. Call GeminiService.generate_autonomous_response() → uses ADK AutonomousAgent
-      3. Return AutonomousResponse with action decision (respond/escalate/goal_complete)
-      """
+      """Generate autonomous response using single ADK agent"""
       try:
-          # Call ADK AutonomousAgent (multi-agent workflow)
-          response = await gemini_service.generate_autonomous_response(request)
+          response = await agent_service.generate_autonomous_response(request)
           return response
       except Exception as e:
-          raise HTTPException(status_code=503, detail="Vertex AI unavailable")
+          raise HTTPException(status_code=503, detail="AI service unavailable")
   ```
 
-**Step 7: Create Feedback API Endpoint**
-- Files to create: `backend/app/api/routes/feedback.py`
-- **Reference**: OpenAPI spec `/api/feedback` endpoint definition
-- **Must match**: FeedbackRequest schema (input), success response
-- Changes needed:
+**Step 7: Create Feedback and Logs Endpoints** - ✅ COMPLETE
+- Files created:
+  - `backend/app/api/routes/feedback.py` - ✅ Implemented
+  - `backend/app/api/routes/conversation_logs.py` - ✅ Implemented
+- Implementation status:
+  - Feedback endpoint: ✅ Tested (200 OK)
+  - Logs POST endpoint: ✅ Tested (200 OK)
+  - Logs GET endpoint: ✅ Tested (200 OK) with pagination
+- **TODO**: Replace in-memory storage with Firestore
+
+**Step 8: Register Routes in Main App** - ✅ COMPLETE
+- Files modified: `backend/app/main.py`
+- Implementation status: ✅ All routes registered and working
+- Routes added:
+  - ✅ `/api/suggest-response` (suggestions tag)
+  - ✅ `/api/autonomous-response` (autonomous tag)
+  - ✅ `/api/feedback` (feedback tag)
+  - ✅ `/api/conversation-logs` (logs tag)
   ```python
-  from fastapi import APIRouter, Depends
-  from app.models.request import FeedbackRequest
-  from app.core.database import save_feedback
-  import uuid
-
-  router = APIRouter()
-
-  @router.post("/feedback")
-  async def submit_feedback(feedback: FeedbackRequest):
-      """
-      Submit feedback
-      1. Validate feedback (FeedbackRequest schema: suggestion_id, rating, optional comment)
-      2. Store in Firestore with timestamp
-      3. Return success response
-      """
-      feedback_id = await save_feedback(feedback)
-      return {
-          "status": "success",
-          "message": "Feedback recorded",
-          "feedback_id": feedback_id
-      }
-  ```
-
-**Step 8: Create Conversation Logs API Endpoint**
-- Files to create: `backend/app/api/routes/logs.py`
-- **Reference**: OpenAPI spec `/api/conversation-logs` GET and POST endpoints
-- **Must match**: ConversationLogCreate (POST input), ConversationLogMetadata (GET output)
-- Changes needed:
-  ```python
-  from fastapi import APIRouter, Query
-  from typing import Optional, List
-  from app.models.request import ConversationLogCreate
-  from app.models.response import ConversationLogMetadata
-  from app.core.database import get_conversation_logs, save_conversation_log
-
-  router = APIRouter()
-
-  @router.get("/conversation-logs")
-  async def get_logs(
-      limit: int = Query(50, ge=1, le=100),  # Per OpenAPI spec
-      platform: Optional[str] = Query(None, enum=["zendesk", "intercom", "coinbase", "robinhood"]),
-      start_date: Optional[int] = None
-  ):
-      """
-      Retrieve conversation logs
-      1. Query Firestore for recent logs with filters
-      2. Filter sensitive data (privacy: no customer message content)
-      3. Return response: {logs: ConversationLogMetadata[], total: int, page: int}
-      """
-      logs = await get_conversation_logs(limit, platform, start_date)
-      return {
-          "logs": logs,
-          "total": len(logs),
-          "page": 1
-      }
-
-  @router.post("/conversation-logs", status_code=201)
-  async def save_log(log: ConversationLogCreate):
-      """
-      Save conversation log
-      1. Validate log (ConversationLogCreate schema)
-      2. Remove customer message content (privacy requirement)
-      3. Save metadata only to Firestore
-      4. Return: {status: "success", log_id: "log_..."}
-      """
-      log_id = await save_conversation_log(log)
-      return {
-          "status": "success",
-          "log_id": log_id
-      }
-  ```
-
-**Step 9: Register Routes in Main App**
-- Files to modify: `backend/app/main.py`
-- **Reference**: OpenAPI spec tags: suggestions, autonomous, feedback, logs, health
-- Changes needed:
-  ```python
+  from fastapi import FastAPI
+  from fastapi.middleware.cors import CORSMiddleware
   from app.api.routes import suggest, autonomous, feedback, logs
+  from app.core.config import settings
 
+  app = FastAPI(title="Support Chat AI API")
+
+  # CORS
+  app.add_middleware(
+      CORSMiddleware,
+      allow_origins=settings.ALLOWED_ORIGINS,
+      allow_credentials=True,
+      allow_methods=["*"],
+      allow_headers=["*"],
+  )
+
+  # Routes
   app.include_router(suggest.router, prefix="/api", tags=["suggestions"])
   app.include_router(autonomous.router, prefix="/api", tags=["autonomous"])
   app.include_router(feedback.router, prefix="/api", tags=["feedback"])
   app.include_router(logs.router, prefix="/api", tags=["logs"])
 
-  # Ensure FastAPI generates OpenAPI spec at /openapi.json
-  # Compare generated spec with docs/api-spec.yaml for consistency
+  @app.get("/health")
+  async def health_check():
+      return {"status": "healthy", "model": "gemini-2.5-flash"}
   ```
 
-#### **Phase 3: Security & Infrastructure (1-2 hours)**
+#### **Phase 3: Security & Infrastructure (1-2 hours) - ⏳ PENDING**
 
-**Step 10: Implement Authentication Middleware**
-- Files to create: `backend/app/core/security.py`
-- **Reference**: OpenAPI spec securitySchemes.ApiKeyAuth (header: X-API-Key)
-- Changes needed:
-  ```python
-  from fastapi import Security, HTTPException
-  from fastapi.security import APIKeyHeader
-  from app.core.config import settings
+**Step 9: Implement API Key Authentication**
+- Files to modify: `backend/app/core/security.py`
+- Status: ❌ Not started
+- Required: Middleware to validate X-API-Key header
 
-  api_key_header = APIKeyHeader(name="X-API-Key")  # Per OpenAPI spec
+**Step 10: Add Rate Limiting with SlowAPI**
+- Files to modify: `backend/app/main.py`
+- Status: ❌ Not started
+- Required: SlowAPI middleware with 60 req/min limit
 
-  async def verify_api_key(api_key: str = Security(api_key_header)):
-      """Verify API key per OpenAPI spec"""
-      if not is_valid_api_key(api_key):
-          raise HTTPException(
-              status_code=401,  # Per OpenAPI spec
-              detail="Invalid or missing API key"
-          )
-      return api_key
-
-  def is_valid_api_key(api_key: str) -> bool:
-      """Check if API key is valid"""
-      # Implementation: check against Secret Manager
-      pass
-  ```
-
-**Step 11: Implement Rate Limiting**
-- Files to modify: `backend/app/main.py`, create `backend/app/middleware/rate_limit.py`
-- **Reference**: OpenAPI spec info.description (rate limiting: 60 requests/minute)
-- Changes needed:
-  ```python
-  from slowapi import Limiter, _rate_limit_exceeded_handler
-  from slowapi.util import get_remote_address
-
-  limiter = Limiter(key_func=get_remote_address)
-  app.state.limiter = limiter
-  app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-
-  # Apply to routes (60/minute per OpenAPI spec)
-  @limiter.limit("60/minute")
-  @router.post("/api/suggest-response")
-  async def suggest_response(...):
-      ...
-
-  # Return 429 error with retry_after field (per OpenAPI Error schema)
-  ```
-
-**Step 12: Implement Firestore Integration**
+**Step 11: Implement Firestore Integration**
 - Files to create: `backend/app/core/database.py`
-- **Reference**: OpenAPI spec ConversationLogCreate and ConversationLogMetadata schemas
-- Changes needed:
-  ```python
-  from google.cloud import firestore
+- Status: ❌ Not started
+- Required: Replace in-memory storage in feedback.py and conversation_logs.py
 
-  db = firestore.Client()
+**Step 12: Set Up Secret Manager Integration**
+- Files to modify: `backend/app/core/security.py`
+- Status: ❌ Not started
+- Required: Load API keys from GCP Secret Manager
 
-  async def save_conversation_log(log: dict):
-      """Save to Firestore (metadata only, no customer message content)"""
-      doc_ref = db.collection('conversation_logs').document()
-      doc_ref.set(log)
-      return doc_ref.id
+#### **Phase 4: Extension Integration (1-2 hours) - ⏳ PENDING**
 
-  async def get_conversation_logs(limit: int, platform: str, start_date: int):
-      """Query Firestore for logs"""
-      query = db.collection('conversation_logs').limit(limit)
-      if platform:
-          query = query.where('platform', '==', platform)
-      # Execute query and return results
-      pass
-
-  async def save_feedback(feedback: FeedbackRequest):
-      """Save feedback to Firestore"""
-      doc_ref = db.collection('feedback').document()
-      doc_ref.set(feedback.dict())
-      return f"fb_{doc_ref.id}"
-  ```
-
-#### **Phase 4: Extension Integration (1-2 hours)**
-
-**Step 13: Replace Mock API with Real API Client**
+**Step 13: Replace Mock API Client**
 - Files to modify: `extension/src/background/api-client.ts`
-- **Reference**: OpenAPI spec endpoints and request/response schemas
-- Changes needed:
-  ```typescript
-  const API_URL = import.meta.env.VITE_API_URL || 'https://your-cloud-run-url'
-  const API_KEY = import.meta.env.VITE_API_KEY
+- Status: ❌ Not started
+- Required: Remove mock-api.ts, add real HTTP calls to Cloud Run
 
-  export async function fetchSuggestion(request: SuggestRequest): Promise<SuggestResponse> {
-    const response = await fetch(`${API_URL}/api/suggest-response`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': API_KEY  // Per OpenAPI securitySchemes
-      },
-      body: JSON.stringify(request)
-    })
+**Step 14: Update TypeScript Types**
+- Files to modify: `extension/src/types/api.ts`
+- Status: ❌ Not started
+- Required: Update types to match updated Pydantic models (Suggestion, Metadata changes)
 
-    if (!response.ok) {
-      // Handle errors per OpenAPI spec: 400, 401, 429, 500, 503
-      throw new APIError(`API error: ${response.status}`)
-    }
+**Step 15: Add Environment Configuration**
+- Files to modify: `extension/.env`, `extension/vite.config.ts`
+- Status: ❌ Not started
+- Required: Add VITE_API_URL environment variable for Cloud Run URL
 
-    return await response.json()  // Returns SuggestResponse schema
-  }
+#### **Phase 5: Deployment (1-2 hours) - ⏳ PENDING**
 
-  export async function fetchAutonomousResponse(request: AutonomousRequest): Promise<AutonomousResponse> {
-    const response = await fetch(`${API_URL}/api/autonomous-response`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': API_KEY
-      },
-      body: JSON.stringify(request)
-    })
-
-    if (!response.ok) {
-      throw new APIError(`API error: ${response.status}`)
-    }
-
-    return await response.json()  // Returns AutonomousResponse schema
-  }
-  ```
-
-**Step 14: Add Environment Configuration**
-- Files to create: `extension/.env.example`, modify `extension/vite.config.ts`
-- **Reference**: OpenAPI spec servers (production and local dev URLs)
-- Changes needed:
-  ```bash
-  # .env.example
-  VITE_API_URL=http://localhost:8080  # Local dev per OpenAPI spec
-  VITE_API_KEY=your-dev-api-key
-  ```
-  ```typescript
-  // vite.config.ts
-  export default defineConfig({
-    define: {
-      'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL),
-      'import.meta.env.VITE_API_KEY': JSON.stringify(process.env.VITE_API_KEY)
-    }
-  })
-  ```
-
-**Step 15: Update Mock API to Fallback Mode**
-- Files to modify: `extension/src/lib/mock-api.ts`
-- Changes needed:
-  ```typescript
-  export async function getSuggestionWithFallback(request: SuggestRequest): Promise<SuggestResponse> {
-    try {
-      return await fetchSuggestion(request)
-    } catch (error) {
-      console.warn('Backend unavailable, using mock API', error)
-      return await generateMockSuggestion(request)
-    }
-  }
-  ```
-
-#### **Phase 5: Deployment (2-3 hours)**
-
-**Step 16: Update Dockerfile for ADK**
+**Step 16: Update Dockerfile** - ⚠️ NEEDS REVIEW
 - Files to modify: `backend/Dockerfile`
-- Ensure it contains ADK dependencies:
+- Changes needed:
   ```dockerfile
   FROM python:3.11-slim
   WORKDIR /app
@@ -1103,395 +964,167 @@ DEBUG=false
       --bind 0.0.0.0:8080 \
       --workers 1 \
       --threads 8 \
+      --timeout 120 \
       --worker-class uvicorn.workers.UvicornWorker
   ```
 
-**Step 17: Deploy to Cloud Run**
+**Step 17: Deploy to Cloud Run (Unified Service)** - ❌ NOT STARTED
 - Terminal commands:
   ```bash
-  # Set project
   export PROJECT_ID=your-project-id
   gcloud config set project $PROJECT_ID
 
-  # Build Docker image
   cd backend
-  docker build -t us-central1-docker.pkg.dev/$PROJECT_ID/support-chat-ai/backend:v1.0.0-adk .
+  docker build -t us-central1-docker.pkg.dev/$PROJECT_ID/support-chat-ai/backend:v1.0.0 .
+  docker push us-central1-docker.pkg.dev/$PROJECT_ID/support-chat-ai/backend:v1.0.0
 
-  # Push to Artifact Registry
-  gcloud auth configure-docker us-central1-docker.pkg.dev
-  docker push us-central1-docker.pkg.dev/$PROJECT_ID/support-chat-ai/backend:v1.0.0-adk
-
-  # Deploy to Cloud Run (production URL per OpenAPI spec servers)
+  # Deploy unified service (FastAPI + ADK)
   gcloud run deploy support-chat-ai \
-    --image=us-central1-docker.pkg.dev/$PROJECT_ID/support-chat-ai/backend:v1.0.0-adk \
+    --image=us-central1-docker.pkg.dev/$PROJECT_ID/support-chat-ai/backend:v1.0.0 \
     --region=us-central1 \
     --platform=managed \
     --allow-unauthenticated \
-    --set-env-vars="GCP_PROJECT_ID=$PROJECT_ID,ENVIRONMENT=production,GEMINI_MODEL=gemini-1.5-flash,ADK_ENABLE_TRACING=true" \
+    --set-env-vars="GCP_PROJECT_ID=$PROJECT_ID,ENVIRONMENT=production,GEMINI_MODEL=gemini-2.5-flash" \
     --min-instances=1 \
     --max-instances=10 \
-    --memory=1Gi \
-    --cpu=1
+    --memory=2Gi \
+    --cpu=2 \
+    --timeout=120
 
-  # Get deployed URL
   gcloud run services describe support-chat-ai \
     --region=us-central1 \
     --format='value(status.url)'
   ```
 
-**Step 18: Configure Secrets**
-- Terminal commands:
-  ```bash
-  # Create API key secret
-  echo -n "your-secure-api-key" | \
-    gcloud secrets create support-chat-ai-api-key --data-file=-
-
-  # Grant Cloud Run access to secret
-  gcloud secrets add-iam-policy-binding support-chat-ai-api-key \
-    --member="serviceAccount:PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
-    --role="roles/secretmanager.secretAccessor"
-
-  # Update Cloud Run to use secret
-  gcloud run services update support-chat-ai \
-    --region=us-central1 \
-    --update-secrets=API_KEY=support-chat-ai-api-key:latest
-  ```
+**Step 18: Configure GCP Secrets**
+- Status: ❌ Not started
+- Required: Create API key secret in Secret Manager
 
 **Step 19: Update Extension with Production URL**
-- Files to modify: `extension/.env.production`
-- **Reference**: OpenAPI spec servers.url (production)
-- Changes needed:
-  ```bash
-  VITE_API_URL=https://support-chat-ai-XXXXX-uc.a.run.app  # Actual Cloud Run URL
-  VITE_API_KEY=your-production-api-key
-  ```
+- Status: ❌ Not started
+- Required: After deployment, update extension .env with Cloud Run URL
 
-#### **Phase 6: Testing & Validation (2-3 hours)**
+#### **Phase 6: Testing & Validation (2-3 hours) - ⏳ PENDING**
 
-**Step 20: Test Backend Endpoints Locally**
-- **Reference**: Use example requests from OpenAPI spec for testing
-- Terminal commands:
-  ```bash
-  # Start local server
-  cd backend
-  uvicorn app.main:app --reload --port 8080
+**Step 20: Write Unit Tests**
+- Status: ❌ Not started
+- Required: pytest tests for agents, tools, and services
 
-  # Test health check
-  curl http://localhost:8080/health
+**Step 21: Write Integration Tests**
+- Status: ❌ Not started
+- Required: pytest tests for API endpoints with TestClient
 
-  # Test suggestion endpoint with ADK
-  curl -X POST http://localhost:8080/api/suggest-response \
-    -H "Content-Type: application/json" \
-    -H "X-API-Key: test-key" \
-    -d '{
-      "platform": "zendesk",
-      "conversation_context": [
-        {
-          "role": "customer",
-          "content": "My order is late",
-          "timestamp": 1704067200
-        }
-      ]
-    }'
+**Step 22: Validate OpenAPI Compliance**
+- Status: ❌ Not started
+- Required: Compare actual responses with `docs/api-spec.yaml`
 
-  # Verify response matches SuggestResponse schema
-  ```
+**Step 23: End-to-End Testing with Extension**
+- Status: ❌ Not started
+- Required: Test full flow from extension → backend → AI response
 
-**Step 21: Write Backend Tests (with ADK Mocking)**
-- Files to create: `backend/tests/test_suggest.py`, `backend/tests/test_autonomous.py`, `backend/tests/test_agents.py`
-- **Reference**: Use OpenAPI spec examples as test cases
-- Changes needed:
-  ```python
-  import pytest
-  from fastapi.testclient import TestClient
-  from app.main import app
-  from unittest.mock import Mock, patch
-
-  client = TestClient(app)
-
-  @patch('app.agents.suggestion_agent.SuggestionAgent')
-  def test_suggest_response_with_adk(mock_agent):
-      """Test suggestion endpoint with mocked ADK agent"""
-      # Mock ADK SuggestionAgent
-      mock_agent.return_value.generate_suggestion.return_value = Suggestion(
-          text="I apologize for the delay...",
-          confidence=0.85,
-          reasoning="Order delay detected"
-      )
-
-      response = client.post("/api/suggest-response", json={
-          "platform": "zendesk",
-          "conversation_context": [{
-              "role": "customer",
-              "content": "My order #12345 hasn't arrived yet",
-              "timestamp": 1704067200
-          }]
-      })
-
-      assert response.status_code == 200
-      data = response.json()
-      assert "suggestions" in data
-      assert data["metadata"]["model_used"] == "gemini-1.5-flash"
-
-  @patch('app.agents.autonomous_agent.AutonomousAgent')
-  def test_autonomous_response_with_adk(mock_agent):
-      """Test autonomous endpoint with mocked ADK multi-agent"""
-      # Mock ADK AutonomousAgent
-      mock_agent.return_value.process.return_value = AutonomousResponse(
-          action="respond",
-          response_text="Let me check your order status...",
-          updated_state=GoalState(active=True, current_turn=2, progress=0.4),
-          reasoning="Gathering order information",
-          confidence=0.78,
-          metadata={...}
-      )
-
-      response = client.post("/api/autonomous-response", json={
-          "platform": "zendesk",
-          "conversation_context": [{
-              "role": "customer",
-              "content": "My order is late",
-              "timestamp": 1704067200
-          }],
-          "goal": {
-              "type": "resolve_issue",
-              "description": "Resolve shipping delay",
-              "max_turns": 5
-          },
-          "goal_state": {
-              "active": True,
-              "current_turn": 1,
-              "progress": 0.2
-          },
-          "safety_constraints": {
-              "max_turns": 5,
-              "escalation_keywords": ["angry", "manager"],
-              "stop_if_confused": True,
-              "min_confidence": 0.7
-          }
-      })
-
-      assert response.status_code == 200
-      data = response.json()
-      assert data["action"] in ["respond", "escalate", "goal_complete"]
-      assert 0.0 <= data["confidence"] <= 1.0
-  ```
-
-**Step 22: Validate Against OpenAPI Spec**
-- **Reference**: Ensure implementation matches OpenAPI specification exactly
-- Tools and commands:
-  ```bash
-  # Install OpenAPI validator
-  npm install -g @stoplight/spectral-cli
-
-  # Validate spec itself
-  spectral lint docs/api-spec.yaml
-
-  # Test backend generates matching OpenAPI spec
-  uvicorn app.main:app --reload --port 8080
-  curl http://localhost:8080/openapi.json > /tmp/generated-openapi.json
-
-  # Compare schemas
-  # Ensure schemas match (request/response models)
-  # Ensure endpoints match (paths, methods, parameters)
-  ```
-
-**Step 23: End-to-End Testing**
-- Steps:
-  1. Load extension in Chrome with production API URL
-  2. Navigate to Coinbase/Robinhood chat page
-  3. Test Suggestion Mode with real ADK-powered AI responses
-  4. Test YOLO Mode with ADK multi-agent autonomous responses
-  5. Verify emergency stop works
-  6. Test with invalid API key (should return 401)
-  7. Test rate limiting (should return 429 after 60 requests/min)
-  8. Monitor Cloud Run logs for ADK agent activity
-  9. Check ADK tracing if enabled (ADK_ENABLE_TRACING=true)
-
-**Step 24: Performance Testing**
-- Terminal commands:
-  ```bash
-  # Test suggestion endpoint (target: <2 seconds)
-  ab -n 100 -c 10 -T 'application/json' \
-    -H "X-API-Key: test-key" \
-    -p request.json \
-    https://your-cloud-run-url/api/suggest-response
-
-  # Check Cloud Run metrics
-  gcloud run services describe support-chat-ai \
-    --region=us-central1 \
-    --format="value(status.url)"
-
-  # Monitor logs (look for ADK agent execution times)
-  gcloud logging read "resource.type=cloud_run_revision \
-    AND resource.labels.service_name=support-chat-ai" \
-    --limit=50
-  ```
-
-### Testing Strategy
-
-**Unit Tests (Backend):**
-- Test each ADK tool independently with mocked inputs
-- Test ADK agents with mocked Vertex AI responses
-- Test service functions independently
-- Test error handling and edge cases
-- Target: 80%+ code coverage
-
-**Integration Tests (Backend with ADK):**
-- Test API endpoints end-to-end with mocked ADK agents
-- Test ADK agent workflows with test Gemini model
-- Test with various conversation contexts
-- Verify response format matches OpenAPI schemas
-
-**ADK Agent Tests:**
-- Test SuggestionAgent with mock ConversationContextTool
-- Test AutonomousAgent multi-agent workflow (GoalPlanner → SafetyChecker → ResponseGenerator)
-- Test ADK Sequential orchestration
-- Test ADK tool calling
-- Mock Vertex AI calls for unit tests, use test model for integration tests
-
-**Schema Validation Tests:**
-- Validate all request payloads against OpenAPI spec schemas
-- Validate all response payloads against OpenAPI spec schemas
-- Test error responses match OpenAPI error schema (400, 401, 429, 500, 503)
-
-**E2E Tests (Extension + Backend + ADK):**
-- Load extension in test browser
-- Navigate to real chat platform
-- Trigger suggestion generation (powered by ADK SuggestionAgent)
-- Verify suggestion appears in UI
-- Test autonomous mode flow (powered by ADK AutonomousAgent multi-agent)
-- Test error scenarios (API down, rate limit)
-
-**Performance Tests:**
-- Measure P50, P95, P99 latency (target: P95 < 2s per OpenAPI spec)
-- Test with concurrent requests
-- Verify Cloud Run auto-scaling
-- Monitor Vertex AI quota usage
-- Monitor ADK agent execution times
-
-**Manual Testing Checklist:**
-- [ ] Health check returns 200 with correct schema
-- [ ] Suggestion endpoint returns valid SuggestResponse (ADK-powered)
-- [ ] Autonomous endpoint returns valid AutonomousResponse (ADK multi-agent)
-- [ ] Invalid API key returns 401
-- [ ] Missing API key returns 401
-- [ ] Rate limit triggers after 60 requests/minute (returns 429)
-- [ ] Extension displays real ADK-powered AI suggestions
-- [ ] YOLO mode works end-to-end with ADK multi-agent workflow
-- [ ] Emergency stop halts YOLO mode
-- [ ] Conversation logs saved to Firestore (metadata only)
-- [ ] No customer data stored permanently (privacy)
-- [ ] All responses include required metadata fields
-- [ ] ADK agents execute successfully in production
-- [ ] ADK tracing logs visible (if enabled)
+**Step 24: Performance and Load Testing**
+- Status: ❌ Not started
+- Required: Measure latency (<2s target) and concurrent request handling
 
 ## 🎯 Success Criteria
 
 **Backend:**
 - ✅ All API endpoints return 2xx responses
 - ✅ All endpoints match OpenAPI spec exactly
-- ✅ **Google ADK successfully integrated and operational**
-- ✅ **ADK SuggestionAgent generates suggestions**
-- ✅ **ADK AutonomousAgent multi-agent workflow executes correctly**
-- ✅ Vertex AI successfully generates suggestions via ADK
+- ✅ **Google ADK successfully integrated** (simplified single-agent)
+- ✅ **Single SuggestionAgent with Gemini 2.5 Flash works**
+- ✅ **Single AutonomousAgent with Gemini 2.5 Flash works**
 - ✅ Response latency P95 < 2 seconds
 - ✅ Rate limiting prevents abuse (60 req/min)
-- ✅ No customer data stored (only metadata)
-- ✅ Deployed to Cloud Run with auto-scaling
-- ✅ Logs visible in Cloud Logging
+- ✅ **Unified Cloud Run deployment successful** (no Agent Engine)
 - ✅ Tests passing with 80%+ coverage
-- ✅ Generated OpenAPI spec matches docs/api-spec.yaml
 
-**ADK Integration:**
-- ✅ **ADK agents deployed successfully**
-- ✅ **SuggestionAgent uses Gemini 1.5 Flash**
-- ✅ **AutonomousAgent uses Gemini 1.5 Pro with multi-agent orchestration**
-- ✅ **ADK tools (ConversationContextTool, GoalTrackerTool, SafetyCheckerTool) functional**
-- ✅ **ADK Sequential workflow executes correctly**
-- ✅ **ADK state management works for conversation context**
-- ✅ **ADK tracing logs captured (if enabled)**
+**Simplification Success:**
+- ✅ **Only Gemini 2.5 Flash used** (cost-effective)
+- ✅ **No multi-agent complexity** (single agent per mode)
+- ✅ **Single Cloud Run service** (FastAPI + ADK unified)
+- ✅ **Simpler codebase** (easier to maintain and debug)
+- ✅ **Lower costs** (Flash model + single deployment)
 
 **Extension Integration:**
 - ✅ Extension successfully calls backend API
-- ✅ Real ADK-powered AI suggestions displayed in UI
-- ✅ Fallback to mock API when backend unavailable
-- ✅ API key securely stored and transmitted
-- ✅ Error handling for network failures
-- ✅ YOLO mode works with real ADK multi-agent decisions
+- ✅ Real ADK-powered AI suggestions displayed
+- ✅ YOLO mode works with single-agent autonomous responses
 
 **Security:**
-- ✅ API key authentication required (X-API-Key header)
+- ✅ API key authentication required
 - ✅ CORS restricted to extension origin
-- ✅ No secrets in code or logs
 - ✅ Rate limiting prevents DoS (60/min)
-- ✅ Input validation on all endpoints
 
 **Deployment:**
-- ✅ Cloud Run service deployed and running
+- ✅ **Single Cloud Run service deployed** (unified architecture)
 - ✅ Auto-scaling configured (1-10 instances)
-- ✅ Environment variables configured (including ADK settings)
-- ✅ Secrets stored in Secret Manager
-- ✅ Monitoring and alerting enabled
+- ✅ Environment variables configured
+- ✅ Monitoring enabled
 
-**Documentation:**
-- ✅ API endpoints documented in OpenAPI 3.0 spec
-- ✅ **ADK architecture documented**
-- ✅ **ADK agent design patterns documented**
-- ✅ All request/response schemas defined
-- ✅ Examples provided for all endpoints
-- ✅ Deployment instructions in README
-- ✅ Environment variable guide
-- ✅ Troubleshooting guide
+## 🔧 How to Run Locally
+
+**Start the Backend Server:**
+```bash
+cd backend
+source venv/bin/activate  # Windows: venv\Scripts\activate
+uvicorn app.main:app --reload --port 8001
+```
+
+**Access the API:**
+- Swagger Docs: http://localhost:8001/docs
+- Health Check: http://localhost:8001/health
+- Root: http://localhost:8001/
+
+**Run Test Scripts:**
+```bash
+cd backend
+source venv/bin/activate
+python test_api.py              # Test suggest and feedback endpoints
+python test_autonomous_api.py   # Test autonomous and logs endpoints
+```
+
+**Test Results (2025-11-04):**
+All endpoints returning 200 OK:
+- ✅ GET /health
+- ✅ GET /
+- ✅ POST /api/suggest-response
+- ✅ POST /api/autonomous-response
+- ✅ POST /api/feedback
+- ✅ POST /api/conversation-logs
+- ✅ GET /api/conversation-logs
 
 ## 📚 Additional Notes
+
+**Simplified Architecture Benefits:**
+1. **Cost Savings**: Gemini 2.5 Flash is 10x cheaper than Pro
+2. **Faster Development**: Single agent per mode = simpler code
+3. **Easier Debugging**: No multi-agent orchestration complexity
+4. **Better Performance**: Less overhead, faster responses
+5. **Simpler Deployment**: One service, one deployment, easier rollbacks
+6. **Good Enough**: Flash model handles support chat well
 
 **Google ADK Resources:**
 - **Official Docs**: https://google.github.io/adk-docs/
 - **GitHub**: https://github.com/google/adk-python
-- **Examples**: Check ADK documentation for agent examples and best practices
-- **Community**: ADK is actively maintained with bi-weekly releases
+- **Examples**: Agent examples and best practices
 
-**ADK Best Practices:**
-- Use Sequential workflow for predictable pipelines (YOLO mode safety checks)
-- Use LLM-driven routing for dynamic decision-making
-- Keep tools focused and single-purpose
-- Use ADK's built-in state management for conversation context
-- Enable tracing in development for debugging
-- Deploy to Cloud Run for cost-effective scaling (ADK is optimized for serverless)
-
-**OpenAPI Specification Usage:**
-- **Source of Truth**: `docs/api-spec.yaml` is the authoritative specification
-- **Implementation Guide**: Use OpenAPI schemas to guide Pydantic model creation
-- **Testing Reference**: Use OpenAPI examples as test cases
-- **Client Generation**: Can generate TypeScript client code from spec
-
-**Cost Optimization (with ADK):**
-- Use Gemini 1.5 Flash for Suggestion Mode (10x cheaper, via ADK)
-- Use Gemini 1.5 Pro only for YOLO Mode (higher accuracy, via ADK)
-- Implement response caching for identical requests (ADK supports caching)
-- Set Cloud Run min instances=1, max=10
-- ADK's token optimization reduces unnecessary LLM calls
+**Cost Optimization:**
+- Gemini 2.5 Flash only (10x cheaper than Pro)
+- Single Cloud Run service (no separate deployments)
+- Response caching for common queries
+- Auto-scaling prevents waste
 
 **Monitoring:**
-- Set up Cloud Monitoring alerts for:
-  - Response latency > 3 seconds (target <2s)
-  - Error rate > 5%
-  - CPU usage > 80%
-  - Request rate spike (DDoS detection)
-- **ADK-specific monitoring**:
-  - Agent execution times
-  - Tool invocation frequency
-  - Multi-agent workflow success rate
+- Response latency < 2 seconds (target)
+- Error rate < 5%
+- CPU/Memory usage
+- Agent execution times
+- Model costs (Flash pricing)
 
 **Future Enhancements:**
-- Implement streaming responses for faster perceived performance (ADK supports streaming)
-- Add response caching with Redis (ADK-compatible)
-- Implement A/B testing for different agent prompts
-- Add conversation analytics dashboard
-- Support for more Gemini models (Gemini Ultra)
-- Implement feedback loop for agent fine-tuning
-- Generate TypeScript API client from OpenAPI spec
-- **Deploy to Vertex AI Agent Engine for enterprise-scale ADK agents**
-- **Integrate with Google MCP (Model Context Protocol) tools via ADK**
-- **Add LangChain/LlamaIndex tools to ADK agents**
+- Add streaming responses (ADK supports streaming)
+- Response caching with Redis
+- A/B testing different prompts
+- Analytics dashboard
+- Upgrade to Gemini Pro if Flash insufficient
