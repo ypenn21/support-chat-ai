@@ -1,0 +1,10 @@
+{
+  "platform": "zendesk",
+  "conversation_context": [
+    {
+      "role": "customer",
+      "content": "My order hasn't arrived yet",
+      "timestamp": 1704067200
+    }
+  ]
+}
