@@ -7,7 +7,7 @@ AI-powered response automation for customers interacting with support agents. Mo
 **Tech Stack:**
 - **Frontend**: Chrome Extension (Manifest V3) with TypeScript, React, Vite
 - **Backend**: Python 3.11 + FastAPI on GCP Cloud Run
-- **AI**: Google Vertex AI Gemini 1.5 Pro/Flash
+- **AI**: Google Vertex AI Gemini 2.5 Pro/Flash
 - **Infrastructure**: GCP (Cloud Run, Firestore, Secret Manager, Artifact Registry)
 
 **Three-Tier System:**
