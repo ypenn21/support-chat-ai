@@ -12,7 +12,7 @@ AI-powered response automation for customers interacting with support agents. Mo
 
 **Three-Tier System:**
 ```
-Chrome Extension → Cloud Run API → Vertex AI Gemini
+Chrome Extension FE → Cloud Run FastAPI BE → Vertex AI Gemini
 ```
 
 ## Quick Start
